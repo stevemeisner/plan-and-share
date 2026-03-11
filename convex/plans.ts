@@ -1,7 +1,58 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalQuery, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import GithubSlugger from "github-slugger";
+
+// Internal (unauthenticated) versions for HTTP endpoints (CLI access)
+export const listByFolderInternal = internalQuery({
+  args: { folderId: v.id("folders") },
+  handler: async (ctx, args) => {
+    const plans = await ctx.db
+      .query("plans")
+      .withIndex("by_folder", (q) => q.eq("folderId", args.folderId))
+      .collect();
+    return plans.filter((p) => !p.deletedAt);
+  },
+});
+
+export const createWithVersionInternal = internalMutation({
+  args: {
+    folderId: v.id("folders"),
+    title: v.string(),
+    markdownContent: v.string(),
+    htmlContent: v.string(),
+    summary: v.optional(v.string()),
+    userId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    const slugger = new GithubSlugger();
+    const slug = slugger.slug(args.title);
+    const now = Date.now();
+
+    const planId = await ctx.db.insert("plans", {
+      folderId: args.folderId,
+      title: args.title,
+      slug,
+      status: "draft",
+      createdBy: args.userId,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    const versionId = await ctx.db.insert("planVersions", {
+      planId,
+      version: 1,
+      markdownContent: args.markdownContent,
+      htmlContent: args.htmlContent,
+      summary: args.summary,
+      pushedBy: args.userId,
+      pushedAt: now,
+    });
+
+    await ctx.db.patch(planId, { currentVersionId: versionId });
+    return { planId, versionId };
+  },
+});
 
 export const listByFolder = query({
   args: { folderId: v.id("folders") },

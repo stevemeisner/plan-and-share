@@ -1,4 +1,4 @@
-import { getStoredToken, getConvexUrl } from "./auth.js";
+import { getStoredToken, getConvexUrl, getStoredEmail } from "./auth.js";
 
 export async function apiRequest(
   path: string,
@@ -18,11 +18,16 @@ export async function apiRequest(
     }
   }
 
+  const email = getStoredEmail();
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
+  }
+  if (email) {
+    headers["X-User-Email"] = email;
   }
 
   const maxRetries = 3;

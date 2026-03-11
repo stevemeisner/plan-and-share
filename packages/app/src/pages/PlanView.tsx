@@ -38,7 +38,10 @@ export function PlanView() {
   const updateStatus = useMutation(api.plans.updateStatus);
   const submitReview = useMutation(api.reviews.submit);
 
-  const creatorName = users?.find((u) => u._id === (plan as any)?.createdBy)?.name ?? "Unknown";
+  const createdBy = (plan as any)?.createdBy;
+  const creatorName = createdBy
+    ? (users?.find((u) => u._id === createdBy)?.name ?? "Unknown")
+    : "CLI";
 
   if (!plan) {
     return <div className="p-8 text-[var(--plan-text-muted)]">Plan not found.</div>;

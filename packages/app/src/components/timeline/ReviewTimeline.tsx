@@ -13,7 +13,8 @@ export function ReviewTimeline({ planId, planCreatedAt, planCreatedByName }: Rev
   const versions = useQuery(api.planVersions.listByPlan, { planId: planId as any }) ?? [];
   const users = useQuery(api.users.list, {}) as Array<{ _id: string; name: string }> | undefined;
 
-  const userName = (userId: string) => users?.find((u) => u._id === userId)?.name ?? "Unknown";
+  const userName = (userId: string | undefined | null) =>
+    userId ? (users?.find((u) => u._id === userId)?.name ?? "Unknown") : "CLI";
 
   type TimelineEvent = {
     type: "approved" | "changes_requested" | "version_pushed" | "created";

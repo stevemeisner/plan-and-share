@@ -21,6 +21,15 @@ export function getStoredToken(): string | null {
   }
 }
 
+export function getStoredEmail(): string | null {
+  try {
+    const config = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf-8"));
+    return config.email ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function storeToken(token: string) {
   ensureConfigDir();
   fs.writeFileSync(CREDENTIALS_FILE, JSON.stringify({ token }, null, 2));

@@ -15,7 +15,7 @@ export function Shell() {
       )}
 
       <div
-        className={`fixed z-50 lg:static lg:block shrink-0 transition-transform duration-200 ${
+        className={`fixed z-50 lg:sticky lg:top-0 lg:h-screen lg:block shrink-0 transition-transform duration-200 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >

@@ -1,7 +1,16 @@
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalQuery } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import GithubSlugger from "github-slugger";
+
+// Internal (unauthenticated) version for HTTP endpoints (CLI access)
+export const listInternal = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const folders = await ctx.db.query("folders").collect();
+    return folders.filter((f) => !f.deletedAt);
+  },
+});
 
 export const list = query({
   args: {},

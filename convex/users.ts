@@ -1,5 +1,17 @@
-import { query } from "./_generated/server";
+import { query, internalQuery } from "./_generated/server";
+import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+
+// Look up a user by email (for CLI attribution)
+export const getByEmail = internalQuery({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    return ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .first();
+  },
+});
 
 export const list = query({
   args: {},
