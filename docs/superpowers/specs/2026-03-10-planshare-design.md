@@ -96,15 +96,76 @@ The CLI discovers the Convex URL in this order:
 3. `.env.local` in current directory (reads `VITE_CONVEX_URL`)
 4. `~/.plan-push/config.json` default
 
-### Vercel Environment Variables
+### Vercel Setup (via CLI)
 
-When deploying the web app to Vercel:
+Use the Vercel CLI for all deployment operations so everything can be handled from the terminal:
 
-| Variable | Value |
-|----------|-------|
-| `VITE_CONVEX_URL` | Your Convex deployment URL (from `npx convex deploy`) |
+```bash
+# Install Vercel CLI globally
+npm i -g vercel
 
-All other secrets live in Convex, not Vercel — the SPA is a static client that talks directly to Convex.
+# Link the project (run from repo root)
+vercel link
+# → Select your Vercel team/account
+# → Link to existing project or create new one
+
+# Set environment variables via CLI
+vercel env add VITE_CONVEX_URL  # paste your Convex deployment URL
+
+# Deploy (or let git push trigger auto-deploy)
+vercel --prod
+```
+
+All other secrets live in Convex, not Vercel — the SPA is a static client that talks directly to Convex. Vercel only needs `VITE_CONVEX_URL` to know where to point the client.
+
+### Bootstrap Sequence (Zero to Connected)
+
+This is the exact order of operations to go from an empty repo to a fully connected project. The first commit should be minimal — just enough scaffolding for Vercel and Convex to connect to.
+
+```bash
+# 1. Initialize the monorepo with a minimal Vite app
+pnpm init
+# Create pnpm-workspace.yaml, packages/app via Vite scaffold
+
+# 2. First commit — bare minimum deployable app
+git init && git add -A && git commit -m "Initial scaffold"
+
+# 3. Push to GitHub (create repo first via gh CLI)
+gh repo create planshare --private --source=. --push
+
+# 4. Connect to Vercel (links GitHub repo for auto-deploy)
+vercel link
+# Vercel auto-detects Vite, sets up build config
+
+# 5. Initialize Convex (creates deployment + .env.local)
+npx convex init
+# Or if project already exists:
+npx convex dev
+
+# 6. Set Convex env vars
+npx convex env set AUTH_GOOGLE_ID "..."
+npx convex env set AUTH_GOOGLE_SECRET "..."
+npx convex env set SITE_URL "https://your-vercel-url.vercel.app"
+npx convex env set RESEND_API_KEY "re_..."
+
+# 7. Set Vercel env var
+vercel env add VITE_CONVEX_URL  # paste from .env.local
+
+# 8. Deploy Convex schema + functions
+npx convex deploy
+
+# 9. Deploy app to Vercel
+vercel --prod
+# Or just push to main — Vercel auto-deploys from GitHub
+```
+
+After this sequence, you have:
+- A GitHub repo with auto-deploy to Vercel on push
+- A Convex backend connected to the app
+- All env vars configured in both Convex and Vercel
+- A live URL you can start building against
+
+Every subsequent step (adding schema, auth, UI) is just code → push → auto-deploy.
 
 ## Architecture Overview
 
