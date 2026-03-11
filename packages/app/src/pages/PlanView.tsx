@@ -6,6 +6,7 @@ import { StatusBadge } from "../components/plans/StatusBadge";
 import { VersionSwitcher } from "../components/plans/VersionSwitcher";
 import { PlanContent } from "../components/plans/PlanContent";
 import { ReviewTimeline } from "../components/timeline/ReviewTimeline";
+import { ReviewModal } from "../components/plans/ReviewModal";
 
 export function PlanView() {
   const { folderSlug, planSlug } = useParams();
@@ -16,12 +17,14 @@ export function PlanView() {
   ) as Array<{ _id: string; version: number; pushedAt: number; changeNote?: string; htmlContent: string; markdownContent: string; planId: string; pushedBy: string }> | undefined;
 
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+  const [reviewAction, setReviewAction] = useState<"approved" | "changes_requested" | null>(null);
 
   const currentVersion = versions?.find(
     (v) => v._id === (selectedVersionId ?? plan?.currentVersionId)
   );
 
   const updateStatus = useMutation(api.plans.updateStatus);
+  const submitReview = useMutation(api.reviews.submit);
 
   if (!plan) {
     return <div className="p-8 text-[var(--plan-text-muted)]">Plan not found.</div>;
@@ -61,17 +64,13 @@ export function PlanView() {
             {plan.status === "in_review" && (
               <>
                 <button
-                  onClick={() => {
-                    // Will trigger review modal — implemented in Chunk 6
-                  }}
+                  onClick={() => setReviewAction("approved")}
                   className="px-3 py-1 bg-[var(--plan-success)] text-white text-xs rounded-md hover:opacity-90"
                 >
                   Approve
                 </button>
                 <button
-                  onClick={() => {
-                    // Will trigger review modal — implemented in Chunk 6
-                  }}
+                  onClick={() => setReviewAction("changes_requested")}
                   className="px-3 py-1 border border-[var(--plan-danger)] text-[var(--plan-danger)] text-xs rounded-md hover:bg-[var(--plan-danger-bg)]"
                 >
                   Request Changes
@@ -123,6 +122,21 @@ export function PlanView() {
           />
         </div>
       </div>
+      {reviewAction && currentVersion && (
+        <ReviewModal
+          action={reviewAction}
+          onSubmit={async (note) => {
+            await submitReview({
+              planId: plan._id as any,
+              versionId: currentVersion._id as any,
+              action: reviewAction,
+              note: note || undefined,
+            });
+            setReviewAction(null);
+          }}
+          onClose={() => setReviewAction(null)}
+        />
+      )}
     </div>
   );
 }
