@@ -570,6 +570,103 @@ plan-push update ./plan.md --plan auth-overhaul --note "Addressed v1 feedback"
 - CLI reads Convex deployment URL from `.env.local` in project root, or `PLANSHARE_URL` env var
 - On token expiry, CLI automatically re-triggers the login flow
 
+## Testing Strategy
+
+Testing follows patterns established in the WatchList project (`~/Sites/watch_list`). Vitest with dual environments, Convex test factories, and test-through-the-public-API discipline.
+
+### Test Configuration
+
+Dual Vitest project setup:
+- **Convex tests** (`convex/**/*.test.ts`): `edge-runtime` environment, uses `convex-test`
+- **Frontend tests** (`packages/app/src/**/*.test.{ts,tsx}`): `jsdom` environment, `@testing-library/react`
+- **CLI tests** (`packages/cli/src/**/*.test.ts`): `node` environment
+- **Renderer tests** (`packages/renderer/src/**/*.test.ts`): `node` environment
+
+### Convex Test Setup
+
+```typescript
+// convex/test.setup.ts
+export const modules = import.meta.glob("./**/!(*.*.*)*.*s");
+
+// Every test file:
+import { convexTest } from "convex-test";
+import schema from "./schema";
+import { modules } from "./test.setup";
+
+const t = convexTest(schema, modules); // Fresh DB per test
+```
+
+### Test Factories
+
+`convex/test.factories.ts` — async factory functions for each table:
+
+```typescript
+// Counter-based unique naming
+let counter = 0;
+const nextId = () => ++counter;
+export const resetFactoryCounter = () => { counter = 0; };
+
+// Factories return IDs + context
+export async function createUser(t, overrides = {}) { ... }
+export async function createFolder(t, overrides = {}) { ... }
+export async function createPlan(t, overrides = {}) { ... }
+export async function createPlanVersion(t, overrides = {}) { ... }
+export async function createComment(t, overrides = {}) { ... }
+
+// Auth helper — creates user + authAccount, returns identity
+export async function createAuthUser(t, overrides = {}) {
+  const userId = await createUser(t, overrides);
+  // ... insert authAccount ...
+  return {
+    userId,
+    identity: t.withIdentity({ subject: `${userId}|password` }),
+  };
+}
+```
+
+Every test uses `beforeEach(resetFactoryCounter)` for deterministic naming and test isolation.
+
+### What Gets Tested
+
+**Convex backend (edge-runtime):**
+- All queries and mutations through the public API (`api.*`)
+- Auth checks (unauthenticated access rejected, role enforcement)
+- Plan status state machine transitions
+- Comment creation, threading, resolution
+- Review actions (approve, request changes) and their side effects
+- Invite flow (create invite → accept → user created)
+- HTTP endpoints (the CLI push API)
+- Side effects verified with `t.run(async (ctx) => ctx.db.get(...))`
+- Validation errors: `await expect(mutation).rejects.toThrow("specific message")`
+
+**Renderer (node):**
+- Markdown → HTML rendering with semantic classes
+- Paragraph ID generation and stability
+- Mermaid block handling
+- Edge cases: empty markdown, malformed headings, very large documents
+
+**Frontend (jsdom):**
+- Component rendering with fixture data
+- Comment composer interaction
+- Version switcher behavior
+- Theme toggle
+- Responsive layout breakpoints (via media query mocks)
+
+**CLI (node):**
+- Command parsing and flag handling
+- Interactive prompt flow (mocked inquirer)
+- API client request/response handling
+- Auth token storage and refresh
+- Error handling (network failures, invalid markdown)
+
+### Test Discipline
+
+- Tests must pass before any push (enforced in workflow)
+- Test through the public API, not internal functions
+- Each test gets a fresh Convex database (`convexTest(schema, modules)`)
+- Verify side effects separately (if a mutation creates a review + updates plan status, assert both)
+- Frontend fixtures are separate from Convex factories (different purposes)
+
 ## Phased Delivery
 
 ### Phase 1: Core Loop
