@@ -4,11 +4,15 @@
   "scripts": {
     "dev": "pnpm --filter @planshare/app dev",
     "build": "pnpm --filter @planshare/app build",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
+    "@vitest/coverage-v8": "^4.0.18",
+    "@vitest/runner": "^4.0.18",
+    "convex-test": "^0.0.41",
     "typescript": "^5.7.0",
-    "vitest": "^3.0.0"
+    "vitest": "^4.0.18"
   }
 }
