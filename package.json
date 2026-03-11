@@ -1,0 +1,14 @@
+{
+  "name": "plan-and-share",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @planshare/app dev",
+    "build": "pnpm --filter @planshare/app build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
