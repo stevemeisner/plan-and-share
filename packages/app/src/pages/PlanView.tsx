@@ -121,6 +121,31 @@ export function PlanView() {
             planCreatedByName="Author"
           />
         </div>
+        <div className="mt-4 pt-4 border-t border-[var(--plan-border-subtle)]">
+          <div className="text-xs text-[var(--plan-text-muted)] uppercase tracking-wider mb-2">
+            Actions
+          </div>
+          <button
+            onClick={async () => {
+              if (currentVersion) {
+                await navigator.clipboard.writeText((currentVersion as any).markdownContent);
+                alert("Copied markdown to clipboard!");
+              }
+            }}
+            className="w-full text-left px-2 py-2 text-sm text-[var(--plan-text-primary)] bg-[var(--plan-bg)] border border-[var(--plan-border)] rounded-md hover:bg-[var(--plan-bg-hover)] transition-colors"
+          >
+            Copy for Linear
+          </button>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.href);
+              alert("Link copied!");
+            }}
+            className="w-full text-left px-2 py-2 mt-2 text-sm text-[var(--plan-text-primary)] bg-[var(--plan-bg)] border border-[var(--plan-border)] rounded-md hover:bg-[var(--plan-bg-hover)] transition-colors"
+          >
+            Copy Link
+          </button>
+        </div>
       </div>
       {reviewAction && currentVersion && (
         <ReviewModal
