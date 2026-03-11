@@ -90,7 +90,7 @@ export function PlanView() {
               v{currentVersion.version} · {new Date(currentVersion.pushedAt).toLocaleDateString()}
               {currentVersion.changeNote && ` · ${currentVersion.changeNote}`}
             </p>
-            <PlanContent htmlContent={currentVersion.htmlContent} />
+            <PlanContent htmlContent={currentVersion.htmlContent} planId={plan._id} versionId={currentVersion._id} />
           </>
         )}
       </div>
