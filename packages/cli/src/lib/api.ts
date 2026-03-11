@@ -8,16 +8,21 @@ export async function apiRequest(
     params?: Record<string, string>;
   } = {}
 ) {
-  const token = getStoredToken();
-  if (!token) throw new Error("Not authenticated. Run: plan-push login");
-
   const baseUrl = getConvexUrl();
   const url = new URL(path, baseUrl);
+  const token = getStoredToken();
 
   if (options.params) {
     for (const [key, value] of Object.entries(options.params)) {
       url.searchParams.set(key, value);
     }
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
   }
 
   const maxRetries = 3;
@@ -27,10 +32,7 @@ export async function apiRequest(
     try {
       const response = await fetch(url.toString(), {
         method: options.method ?? "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
         body: options.body ? JSON.stringify(options.body) : undefined,
       });
 
