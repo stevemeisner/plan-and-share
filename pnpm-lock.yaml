@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@convex-dev/auth':
+        specifier: ^0.0.91
+        version: 0.0.91(@auth/core@0.37.4)(convex@1.32.0(react@19.2.4))(react@19.2.4)
       '@edge-runtime/vm':
         specifier: ^5.0.0
         version: 5.0.0
@@ -17,9 +20,15 @@ importers:
       '@vitest/runner':
         specifier: ^4.0.18
         version: 4.0.18
+      convex:
+        specifier: ^1.32.0
+        version: 1.32.0(react@19.2.4)
       convex-test:
         specifier: ^0.0.41
         version: 0.0.41(convex@1.32.0(react@19.2.4))
+      github-slugger:
+        specifier: ^2.0.0
+        version: 2.0.0
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -119,6 +128,9 @@ importers:
         specifier: ^11.0.0
         version: 11.0.5
     devDependencies:
+      '@types/hast':
+        specifier: ^3.0.4
+        version: 3.0.4
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
