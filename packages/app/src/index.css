@@ -1,1 +1,10 @@
 @import "tailwindcss";
+@import "./styles/theme.css";
+
+body {
+  background-color: var(--plan-bg);
+  color: var(--plan-text-primary);
+  font-family: var(--plan-font-body);
+  font-size: var(--plan-font-size);
+  line-height: var(--plan-line-height);
+}

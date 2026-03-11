@@ -1,0 +1,84 @@
+:root {
+  /* Surface */
+  --plan-bg: #ffffff;
+  --plan-bg-secondary: #f6f8fa;
+  --plan-bg-hover: #f0f2f5;
+  --plan-bg-tertiary: #eaeef2;
+
+  /* Text */
+  --plan-text-primary: #1a1a2e;
+  --plan-text-secondary: #656d76;
+  --plan-text-heading: #0d1117;
+  --plan-text-muted: #8b949e;
+
+  /* Borders */
+  --plan-border: #d0d7de;
+  --plan-border-subtle: #e8eaed;
+
+  /* Interactive */
+  --plan-accent: #0969da;
+  --plan-accent-hover: #0553b1;
+  --plan-success: #1a7f37;
+  --plan-success-bg: #dafbe1;
+  --plan-danger: #cf222e;
+  --plan-danger-bg: #ffebe9;
+  --plan-warning: #9a6700;
+
+  /* Comments */
+  --plan-comment-bg: #f6f8fa;
+  --plan-comment-highlight: rgba(9, 105, 218, 0.08);
+  --plan-comment-border: #0969da;
+
+  /* Code */
+  --plan-code-bg: #f6f8fa;
+  --plan-code-text: #1a1a2e;
+
+  /* Spacing */
+  --plan-content-width: 780px;
+  --plan-paragraph-gap: 1rem;
+  --plan-section-gap: 2.5rem;
+
+  /* Typography */
+  --plan-font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --plan-font-mono: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+  --plan-font-size: 15px;
+  --plan-line-height: 1.7;
+
+  /* Sidebar */
+  --sidebar-width: 260px;
+  --sidebar-bg: #f6f8fa;
+  --sidebar-border: #d0d7de;
+}
+
+[data-theme="dark"] {
+  --plan-bg: #0d1117;
+  --plan-bg-secondary: #161b22;
+  --plan-bg-hover: #1c2128;
+  --plan-bg-tertiary: #21262d;
+
+  --plan-text-primary: #c9d1d9;
+  --plan-text-secondary: #8b949e;
+  --plan-text-heading: #f0f6fc;
+  --plan-text-muted: #484f58;
+
+  --plan-border: #30363d;
+  --plan-border-subtle: #21262d;
+
+  --plan-accent: #58a6ff;
+  --plan-accent-hover: #79c0ff;
+  --plan-success: #3fb950;
+  --plan-success-bg: rgba(63, 185, 80, 0.15);
+  --plan-danger: #f85149;
+  --plan-danger-bg: rgba(248, 81, 73, 0.15);
+  --plan-warning: #d29922;
+
+  --plan-comment-bg: #161b22;
+  --plan-comment-highlight: rgba(88, 166, 255, 0.08);
+  --plan-comment-border: #58a6ff;
+
+  --plan-code-bg: #161b22;
+  --plan-code-text: #c9d1d9;
+
+  --sidebar-bg: #161b22;
+  --sidebar-border: #30363d;
+}
