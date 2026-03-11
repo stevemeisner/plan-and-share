@@ -1,5 +1,5 @@
 import fs from "fs";
-import { apiRequest } from "../lib/api";
+import { apiRequest } from "../lib/api.js";
 import { renderMarkdown } from "@planshare/renderer";
 
 export async function pushCommand(

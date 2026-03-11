@@ -1,4 +1,4 @@
-import { storeToken } from "../lib/auth";
+import { storeToken } from "../lib/auth.js";
 
 export async function loginCommand() {
   console.log("Opening browser for Google sign-in...\n");

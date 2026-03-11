@@ -1,4 +1,4 @@
-import { getStoredToken, getConvexUrl } from "./auth";
+import { getStoredToken, getConvexUrl } from "./auth.js";
 
 export async function apiRequest(
   path: string,

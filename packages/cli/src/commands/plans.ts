@@ -1,4 +1,4 @@
-import { apiRequest } from "../lib/api";
+import { apiRequest } from "../lib/api.js";
 
 export async function plansCommand(folderSlug: string) {
   const folders = await apiRequest("/api/folders");

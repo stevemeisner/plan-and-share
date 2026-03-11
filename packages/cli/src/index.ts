@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { loginCommand } from "./commands/login";
-import { foldersCommand } from "./commands/folders";
-import { plansCommand } from "./commands/plans";
-import { pushCommand } from "./commands/push";
+import { loginCommand } from "./commands/login.js";
+import { foldersCommand } from "./commands/folders.js";
+import { plansCommand } from "./commands/plans.js";
+import { pushCommand } from "./commands/push.js";
 
 const program = new Command();
 

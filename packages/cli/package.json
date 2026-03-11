@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "type": "module",
   "bin": {
-    "plan-push": "./dist/index.js"
+    "plan-push": "./bin/plan-push.js"
   },
   "scripts": {
     "dev": "tsx src/index.ts",
@@ -13,11 +13,11 @@
     "@planshare/renderer": "workspace:*",
     "commander": "^13.0.0",
     "inquirer": "^12.0.0",
-    "open": "^10.1.0"
+    "open": "^10.1.0",
+    "tsx": "^4.19.0"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",
-    "tsx": "^4.19.0",
     "typescript": "^5.7.0"
   }
 }

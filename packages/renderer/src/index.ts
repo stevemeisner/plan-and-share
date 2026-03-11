@@ -2,8 +2,8 @@ import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import rehypeStringify from "rehype-stringify";
-import { paragraphIds } from "./plugins/paragraph-ids";
-import { semanticClasses } from "./plugins/semantic-classes";
+import { paragraphIds } from "./plugins/paragraph-ids.js";
+import { semanticClasses } from "./plugins/semantic-classes.js";
 
 export interface RenderedPlan {
   html: string;

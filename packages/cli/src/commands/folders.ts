@@ -1,4 +1,4 @@
-import { apiRequest } from "../lib/api";
+import { apiRequest } from "../lib/api.js";
 
 export async function foldersCommand() {
   const folders = await apiRequest("/api/folders");
