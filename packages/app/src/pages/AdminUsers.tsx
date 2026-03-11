@@ -33,6 +33,12 @@ export function AdminUsers() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={async (e) => {
+              if (e.key === "Enter" && email.trim()) {
+                await createInvite({ email: email.trim() });
+                setEmail("");
+              }
+            }}
             placeholder="email@example.com"
             className="flex-1 bg-[var(--plan-bg-secondary)] border border-[var(--plan-border)] rounded-md px-3 py-2 text-sm text-[var(--plan-text-primary)] focus:outline-none focus:border-[var(--plan-accent)]"
           />

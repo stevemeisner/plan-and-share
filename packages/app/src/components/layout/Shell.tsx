@@ -15,14 +15,14 @@ export function Shell() {
       )}
 
       <div
-        className={`fixed z-50 lg:static lg:block transition-transform duration-200 ${
+        className={`fixed z-50 lg:static lg:block shrink-0 transition-transform duration-200 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
         <Sidebar onClose={() => setSidebarOpen(false)} />
       </div>
 
-      <main className="flex-1 lg:ml-[var(--sidebar-width)]">
+      <main className="flex-1 min-w-0">
         <div className="lg:hidden flex items-center gap-3 p-4 border-b border-[var(--plan-border-subtle)]">
           <button
             onClick={() => setSidebarOpen(true)}

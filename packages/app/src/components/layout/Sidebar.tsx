@@ -1,4 +1,5 @@
 import { useQuery } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../../../../convex/_generated/api";
 import { Link, useParams } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle";
@@ -24,6 +25,7 @@ export function Sidebar({ onClose }: SidebarProps) {
   const folders = useQuery(api.folders.list, {}) as Folder[] | undefined;
   const me = useQuery(api.users.me, {}) as User | null | undefined;
   const { folderSlug } = useParams();
+  const { signOut } = useAuthActions();
 
   return (
     <aside
@@ -73,21 +75,32 @@ export function Sidebar({ onClose }: SidebarProps) {
       </nav>
 
       {/* User + theme toggle */}
-      <div className="p-4 border-t border-[var(--sidebar-border)] flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {me?.avatarUrl ? (
-            <img src={me.avatarUrl} className="w-7 h-7 rounded-full" alt="" />
-          ) : (
-            <div className="w-7 h-7 rounded-full bg-[var(--plan-accent)] flex items-center justify-center text-white text-xs font-semibold">
-              {me?.name?.[0] ?? "?"}
+      <div className="p-4 border-t border-[var(--sidebar-border)]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {me?.avatarUrl ? (
+              <img src={me.avatarUrl} className="w-7 h-7 rounded-full" alt="" />
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-[var(--plan-accent)] flex items-center justify-center text-white text-xs font-semibold">
+                {me?.name?.[0] ?? "?"}
+              </div>
+            )}
+            <div>
+              <div className="text-xs text-[var(--plan-text-heading)]">{me?.name}</div>
+              <div className="text-xs text-[var(--plan-text-muted)]">{me?.role}</div>
             </div>
-          )}
-          <div>
-            <div className="text-xs text-[var(--plan-text-heading)]">{me?.name}</div>
-            <div className="text-xs text-[var(--plan-text-muted)]">{me?.role}</div>
+          </div>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <button
+              onClick={() => signOut()}
+              className="p-2 rounded-md text-[var(--plan-text-muted)] hover:bg-[var(--plan-bg-hover)] hover:text-[var(--plan-text-primary)] transition-colors text-xs"
+              aria-label="Sign out"
+            >
+              Sign out
+            </button>
           </div>
         </div>
-        <ThemeToggle />
       </div>
     </aside>
   );

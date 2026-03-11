@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
@@ -8,6 +8,15 @@ import { PlanContent } from "../components/plans/PlanContent";
 import { ReviewTimeline } from "../components/timeline/ReviewTimeline";
 import { ReviewModal } from "../components/plans/ReviewModal";
 
+function useToast() {
+  const [message, setMessage] = useState<string | null>(null);
+  const show = useCallback((msg: string) => {
+    setMessage(msg);
+    setTimeout(() => setMessage(null), 2000);
+  }, []);
+  return { message, show };
+}
+
 export function PlanView() {
   const { folderSlug, planSlug } = useParams();
   const plan = useQuery(api.plans.getBySlug, { slug: planSlug! });
@@ -15,9 +24,12 @@ export function PlanView() {
     api.planVersions.listByPlan,
     plan ? { planId: plan._id } : "skip"
   ) as Array<{ _id: string; version: number; pushedAt: number; changeNote?: string; htmlContent: string; markdownContent: string; planId: string; pushedBy: string }> | undefined;
+  const users = useQuery(api.users.list, {}) as Array<{ _id: string; name: string }> | undefined;
 
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const [reviewAction, setReviewAction] = useState<"approved" | "changes_requested" | null>(null);
+  const [busy, setBusy] = useState(false);
+  const toast = useToast();
 
   const currentVersion = versions?.find(
     (v) => v._id === (selectedVersionId ?? plan?.currentVersionId)
@@ -25,6 +37,8 @@ export function PlanView() {
 
   const updateStatus = useMutation(api.plans.updateStatus);
   const submitReview = useMutation(api.reviews.submit);
+
+  const creatorName = users?.find((u) => u._id === (plan as any)?.createdBy)?.name ?? "Unknown";
 
   if (!plan) {
     return <div className="p-8 text-[var(--plan-text-muted)]">Plan not found.</div>;
@@ -53,12 +67,15 @@ export function PlanView() {
             <StatusBadge status={plan.status} />
             {plan.status === "draft" && (
               <button
-                onClick={() =>
-                  updateStatus({ planId: plan._id, status: "in_review" })
-                }
-                className="px-3 py-1 bg-[var(--plan-accent)] text-white text-xs rounded-md hover:opacity-90 transition-opacity"
+                onClick={async () => {
+                  setBusy(true);
+                  await updateStatus({ planId: plan._id, status: "in_review" });
+                  setBusy(false);
+                }}
+                disabled={busy}
+                className="px-3 py-1 bg-[var(--plan-accent)] text-white text-xs rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                Request Review
+                {busy ? "Submitting..." : "Request Review"}
               </button>
             )}
             {plan.status === "in_review" && (
@@ -118,7 +135,7 @@ export function PlanView() {
           <ReviewTimeline
             planId={plan._id}
             planCreatedAt={(plan as any).createdAt}
-            planCreatedByName="Author"
+            planCreatedByName={creatorName}
           />
         </div>
         <div className="mt-4 pt-4 border-t border-[var(--plan-border-subtle)]">
@@ -129,34 +146,42 @@ export function PlanView() {
             onClick={async () => {
               if (currentVersion) {
                 await navigator.clipboard.writeText((currentVersion as any).markdownContent);
-                alert("Copied markdown to clipboard!");
+                toast.show("Copied markdown!");
               }
             }}
-            className="w-full text-left px-2 py-2 text-sm text-[var(--plan-text-primary)] bg-[var(--plan-bg)] border border-[var(--plan-border)] rounded-md hover:bg-[var(--plan-bg-hover)] transition-colors"
+            className="w-full text-left px-2 py-2 text-sm text-[var(--plan-text-primary)] bg-[var(--plan-bg)] border border-[var(--plan-border)] rounded-md hover:bg-[var(--plan-bg-hover)] transition-colors cursor-pointer"
           >
             Copy for Linear
           </button>
           <button
             onClick={() => {
               navigator.clipboard.writeText(window.location.href);
-              alert("Link copied!");
+              toast.show("Link copied!");
             }}
-            className="w-full text-left px-2 py-2 mt-2 text-sm text-[var(--plan-text-primary)] bg-[var(--plan-bg)] border border-[var(--plan-border)] rounded-md hover:bg-[var(--plan-bg-hover)] transition-colors"
+            className="w-full text-left px-2 py-2 mt-2 text-sm text-[var(--plan-text-primary)] bg-[var(--plan-bg)] border border-[var(--plan-border)] rounded-md hover:bg-[var(--plan-bg-hover)] transition-colors cursor-pointer"
           >
             Copy Link
           </button>
         </div>
       </div>
+      {/* Toast notification */}
+      {toast.message && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[var(--plan-text-heading)] text-[var(--plan-bg)] px-4 py-2 rounded-lg text-sm shadow-lg animate-fade-in">
+          {toast.message}
+        </div>
+      )}
       {reviewAction && currentVersion && (
         <ReviewModal
           action={reviewAction}
           onSubmit={async (note) => {
+            setBusy(true);
             await submitReview({
               planId: plan._id as any,
               versionId: currentVersion._id as any,
               action: reviewAction,
               note: note || undefined,
             });
+            setBusy(false);
             setReviewAction(null);
           }}
           onClose={() => setReviewAction(null)}

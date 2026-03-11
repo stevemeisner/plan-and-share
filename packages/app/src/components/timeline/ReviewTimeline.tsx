@@ -11,6 +11,9 @@ interface ReviewTimelineProps {
 export function ReviewTimeline({ planId, planCreatedAt, planCreatedByName }: ReviewTimelineProps) {
   const reviews = useQuery(api.reviews.listByPlan, { planId: planId as any }) ?? [];
   const versions = useQuery(api.planVersions.listByPlan, { planId: planId as any }) ?? [];
+  const users = useQuery(api.users.list, {}) as Array<{ _id: string; name: string }> | undefined;
+
+  const userName = (userId: string) => users?.find((u) => u._id === userId)?.name ?? "Unknown";
 
   type TimelineEvent = {
     type: "approved" | "changes_requested" | "version_pushed" | "created";
@@ -25,7 +28,7 @@ export function ReviewTimeline({ planId, planCreatedAt, planCreatedByName }: Rev
   for (const review of reviews) {
     events.push({
       type: (review as any).action,
-      authorName: "Reviewer",
+      authorName: userName((review as any).authorId),
       timestamp: (review as any).createdAt,
       note: (review as any).note ?? undefined,
     });
@@ -34,7 +37,7 @@ export function ReviewTimeline({ planId, planCreatedAt, planCreatedByName }: Rev
   for (const version of versions) {
     events.push({
       type: "version_pushed",
-      authorName: "Author",
+      authorName: userName((version as any).pushedBy),
       timestamp: (version as any).pushedAt,
       versionNumber: (version as any).version,
       note: (version as any).changeNote ?? undefined,

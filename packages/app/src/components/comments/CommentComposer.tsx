@@ -14,6 +14,13 @@ export function CommentComposer({ onSubmit, onCancel, placeholder }: CommentComp
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && body.trim()) {
+            e.preventDefault();
+            onSubmit(body.trim());
+            setBody("");
+          }
+        }}
         placeholder={placeholder ?? "Leave a comment..."}
         className="w-full bg-[var(--plan-bg)] border border-[var(--plan-border)] rounded-md p-2 text-sm text-[var(--plan-text-primary)] resize-none focus:outline-none focus:border-[var(--plan-accent)]"
         rows={3}
