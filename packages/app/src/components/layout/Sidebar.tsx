@@ -1,7 +1,8 @@
-import { useQuery } from "convex/react";
+import { useState } from "react";
+import { useQuery, useMutation } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../../../../convex/_generated/api";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { ThemeToggle } from "./ThemeToggle";
 
 type Folder = {
@@ -26,6 +27,10 @@ export function Sidebar({ onClose }: SidebarProps) {
   const me = useQuery(api.users.me, {}) as User | null | undefined;
   const { folderSlug } = useParams();
   const { signOut } = useAuthActions();
+  const navigate = useNavigate();
+  const createFolder = useMutation(api.folders.create);
+  const [showNewFolder, setShowNewFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
 
   return (
     <aside
@@ -64,6 +69,36 @@ export function Sidebar({ onClose }: SidebarProps) {
             {folder.name}
           </Link>
         ))}
+        {showNewFolder ? (
+          <div className="px-2 mt-1">
+            <input
+              type="text"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter" && newFolderName.trim()) {
+                  await createFolder({ name: newFolderName.trim() });
+                  setNewFolderName("");
+                  setShowNewFolder(false);
+                }
+                if (e.key === "Escape") {
+                  setShowNewFolder(false);
+                  setNewFolderName("");
+                }
+              }}
+              placeholder="Folder name..."
+              className="w-full bg-[var(--plan-bg)] border border-[var(--plan-border)] rounded-md px-2 py-1 text-sm text-[var(--plan-text-primary)] focus:outline-none focus:border-[var(--plan-accent)]"
+              autoFocus
+            />
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowNewFolder(true)}
+            className="block w-full text-left px-3 py-2 rounded-md text-sm text-[var(--plan-text-muted)] hover:bg-[var(--plan-bg-hover)] hover:text-[var(--plan-text-secondary)] transition-colors"
+          >
+            + New Folder
+          </button>
+        )}
         {me?.role === "admin" && (
           <Link
             to="/admin/users"
