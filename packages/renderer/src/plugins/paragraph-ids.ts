@@ -78,7 +78,7 @@ function visit(
   fn(node, sectionId);
   if ("children" in node) {
     for (const child of node.children) {
-      if (child.type === "element" || child.type === "root") {
+      if (child.type === "element" || (child as any).type === "root") {
         const sid =
           child.type === "element" &&
           (child as Element).tagName === "section" &&
