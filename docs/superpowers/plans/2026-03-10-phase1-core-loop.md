@@ -2448,4 +2448,2358 @@ Remaining chunks to write:
 
 ---
 
-Want me to continue writing Chunks 4-8, or shall we review Chunks 1-3 first?
+## Chunk 4: Web App — Auth, Layout Shell, Router, Theme
+
+### Task 18: Set up Convex auth with Google OAuth
+
+**Files:**
+- Create: `convex/auth.ts`
+- Modify: `packages/app/src/main.tsx`
+- Create: `packages/app/src/lib/auth.tsx`
+
+- [ ] **Step 1: Install @convex-dev/auth in the app**
+
+Run: `pnpm --filter @planshare/app add @convex-dev/auth`
+
+- [ ] **Step 2: Create convex/auth.ts**
+
+```typescript
+import Google from "@auth/core/providers/google";
+import { convexAuth } from "@convex-dev/auth/server";
+
+export const { auth, signIn, signOut, store } = convexAuth({
+  providers: [Google],
+});
+```
+
+- [ ] **Step 3: Create packages/app/src/lib/auth.tsx**
+
+```tsx
+import { useConvexAuth } from "convex/react";
+import { ReactNode } from "react";
+
+export function AuthGuard({ children }: { children: ReactNode }) {
+  const { isAuthenticated, isLoading } = useConvexAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
+  return <>{children}</>;
+}
+
+function LoginPage() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-950">
+      <div className="text-center">
+        <h1 className="text-2xl font-semibold text-white mb-4">PlanShare</h1>
+        <p className="text-gray-400 mb-8">Sign in to view and review plans.</p>
+        <button
+          onClick={() => {
+            // Will be wired to Convex auth signIn
+          }}
+          className="px-6 py-3 bg-white text-gray-900 font-medium rounded-lg hover:bg-gray-100 transition-colors"
+        >
+          Sign in with Google
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 4: Wire auth into main.tsx**
+
+Update `packages/app/src/main.tsx`:
+```tsx
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { ConvexProvider, ConvexReactClient } from "convex/react";
+import { ConvexAuthProvider } from "@convex-dev/auth/react";
+import App from "./App";
+import "./index.css";
+
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <ConvexAuthProvider client={convex}>
+      <App />
+    </ConvexAuthProvider>
+  </React.StrictMode>
+);
+```
+
+- [ ] **Step 5: Verify the app renders the login page**
+
+Run: `pnpm --filter @planshare/app dev`
+Expected: App shows login page (Google auth won't work yet without env vars, but UI renders).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add convex/auth.ts packages/app/src/lib/auth.tsx packages/app/src/main.tsx
+git commit -m "feat: set up Convex auth with Google OAuth provider"
+```
+
+---
+
+### Task 19: Create CSS theme system with dark/light mode
+
+**Files:**
+- Create: `packages/app/src/styles/theme.css`
+- Create: `packages/app/src/lib/theme.ts`
+- Modify: `packages/app/src/index.css`
+
+- [ ] **Step 1: Create packages/app/src/styles/theme.css**
+
+```css
+:root {
+  /* Surface */
+  --plan-bg: #ffffff;
+  --plan-bg-secondary: #f6f8fa;
+  --plan-bg-hover: #f0f2f5;
+  --plan-bg-tertiary: #eaeef2;
+
+  /* Text */
+  --plan-text-primary: #1a1a2e;
+  --plan-text-secondary: #656d76;
+  --plan-text-heading: #0d1117;
+  --plan-text-muted: #8b949e;
+
+  /* Borders */
+  --plan-border: #d0d7de;
+  --plan-border-subtle: #e8eaed;
+
+  /* Interactive */
+  --plan-accent: #0969da;
+  --plan-accent-hover: #0553b1;
+  --plan-success: #1a7f37;
+  --plan-success-bg: #dafbe1;
+  --plan-danger: #cf222e;
+  --plan-danger-bg: #ffebe9;
+  --plan-warning: #9a6700;
+
+  /* Comments */
+  --plan-comment-bg: #f6f8fa;
+  --plan-comment-highlight: rgba(9, 105, 218, 0.08);
+  --plan-comment-border: #0969da;
+
+  /* Code */
+  --plan-code-bg: #f6f8fa;
+  --plan-code-text: #1a1a2e;
+
+  /* Spacing */
+  --plan-content-width: 780px;
+  --plan-paragraph-gap: 1rem;
+  --plan-section-gap: 2.5rem;
+
+  /* Typography */
+  --plan-font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --plan-font-mono: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+  --plan-font-size: 15px;
+  --plan-line-height: 1.7;
+
+  /* Sidebar */
+  --sidebar-width: 260px;
+  --sidebar-bg: #f6f8fa;
+  --sidebar-border: #d0d7de;
+}
+
+[data-theme="dark"] {
+  --plan-bg: #0d1117;
+  --plan-bg-secondary: #161b22;
+  --plan-bg-hover: #1c2128;
+  --plan-bg-tertiary: #21262d;
+
+  --plan-text-primary: #c9d1d9;
+  --plan-text-secondary: #8b949e;
+  --plan-text-heading: #f0f6fc;
+  --plan-text-muted: #484f58;
+
+  --plan-border: #30363d;
+  --plan-border-subtle: #21262d;
+
+  --plan-accent: #58a6ff;
+  --plan-accent-hover: #79c0ff;
+  --plan-success: #3fb950;
+  --plan-success-bg: rgba(63, 185, 80, 0.15);
+  --plan-danger: #f85149;
+  --plan-danger-bg: rgba(248, 81, 73, 0.15);
+  --plan-warning: #d29922;
+
+  --plan-comment-bg: #161b22;
+  --plan-comment-highlight: rgba(88, 166, 255, 0.08);
+  --plan-comment-border: #58a6ff;
+
+  --plan-code-bg: #161b22;
+  --plan-code-text: #c9d1d9;
+
+  --sidebar-bg: #161b22;
+  --sidebar-border: #30363d;
+}
+```
+
+- [ ] **Step 2: Create packages/app/src/lib/theme.ts**
+
+```typescript
+export function getInitialTheme(): "light" | "dark" {
+  const stored = localStorage.getItem("planshare-theme");
+  if (stored === "light" || stored === "dark") return stored;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+}
+
+export function setTheme(theme: "light" | "dark") {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("planshare-theme", theme);
+}
+
+export function toggleTheme(): "light" | "dark" {
+  const current = document.documentElement.getAttribute("data-theme");
+  const next = current === "dark" ? "light" : "dark";
+  setTheme(next);
+  return next;
+}
+```
+
+- [ ] **Step 3: Update packages/app/src/index.css**
+
+```css
+@import "tailwindcss";
+@import "./styles/theme.css";
+
+body {
+  background-color: var(--plan-bg);
+  color: var(--plan-text-primary);
+  font-family: var(--plan-font-body);
+  font-size: var(--plan-font-size);
+  line-height: var(--plan-line-height);
+}
+```
+
+- [ ] **Step 4: Apply initial theme in main.tsx**
+
+Add before `ReactDOM.createRoot`:
+```typescript
+import { getInitialTheme, setTheme } from "./lib/theme";
+setTheme(getInitialTheme());
+```
+
+- [ ] **Step 5: Verify dark mode renders**
+
+Run: `pnpm --filter @planshare/app dev`
+Expected: App respects system dark mode preference. Inspect `<html data-theme="dark">`.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add packages/app/src/styles/theme.css packages/app/src/lib/theme.ts packages/app/src/index.css packages/app/src/main.tsx
+git commit -m "feat: CSS custom property theme system with dark/light mode"
+```
+
+---
+
+### Task 20: Create app shell layout (sidebar + main)
+
+**Files:**
+- Create: `packages/app/src/components/layout/Shell.tsx`
+- Create: `packages/app/src/components/layout/Sidebar.tsx`
+- Create: `packages/app/src/components/layout/ThemeToggle.tsx`
+- Modify: `packages/app/src/App.tsx`
+
+- [ ] **Step 1: Create ThemeToggle component**
+
+Create `packages/app/src/components/layout/ThemeToggle.tsx`:
+```tsx
+import { useState } from "react";
+import { toggleTheme, getInitialTheme } from "../../lib/theme";
+
+export function ThemeToggle() {
+  const [theme, setThemeState] = useState(getInitialTheme);
+
+  return (
+    <button
+      onClick={() => setThemeState(toggleTheme())}
+      className="p-2 rounded-md hover:bg-[var(--plan-bg-hover)] transition-colors"
+      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+    >
+      {theme === "dark" ? "☀️" : "🌙"}
+    </button>
+  );
+}
+```
+
+- [ ] **Step 2: Create Sidebar component**
+
+Create `packages/app/src/components/layout/Sidebar.tsx`:
+```tsx
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Link, useParams } from "react-router-dom";
+import { ThemeToggle } from "./ThemeToggle";
+
+export function Sidebar() {
+  const folders = useQuery(api.folders.list, {});
+  const me = useQuery(api.users.me, {});
+  const { folderSlug } = useParams();
+
+  return (
+    <aside
+      className="w-[var(--sidebar-width)] bg-[var(--sidebar-bg)] border-r border-[var(--sidebar-border)] flex flex-col h-screen fixed left-0 top-0"
+    >
+      {/* Logo */}
+      <div className="p-4 border-b border-[var(--sidebar-border)]">
+        <Link to="/" className="text-[var(--plan-text-heading)] font-semibold text-lg flex items-center gap-2">
+          <span className="bg-[var(--plan-accent)] text-white w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold">P</span>
+          PlanShare
+        </Link>
+      </div>
+
+      {/* Folders */}
+      <nav className="flex-1 overflow-y-auto p-2">
+        <div className="px-3 py-2 text-[var(--plan-text-muted)] text-xs uppercase tracking-wider">
+          Folders
+        </div>
+        {folders?.map((folder) => (
+          <Link
+            key={folder._id}
+            to={`/f/${folder.slug}`}
+            className={`block px-3 py-2 rounded-md text-sm transition-colors ${
+              folderSlug === folder.slug
+                ? "bg-[var(--plan-bg-hover)] text-[var(--plan-text-heading)]"
+                : "text-[var(--plan-text-secondary)] hover:bg-[var(--plan-bg-hover)]"
+            }`}
+          >
+            {folder.name}
+          </Link>
+        ))}
+      </nav>
+
+      {/* User + theme toggle */}
+      <div className="p-4 border-t border-[var(--sidebar-border)] flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {me?.avatarUrl ? (
+            <img src={me.avatarUrl} className="w-7 h-7 rounded-full" alt="" />
+          ) : (
+            <div className="w-7 h-7 rounded-full bg-[var(--plan-accent)] flex items-center justify-center text-white text-xs font-semibold">
+              {me?.name?.[0] ?? "?"}
+            </div>
+          )}
+          <div>
+            <div className="text-xs text-[var(--plan-text-heading)]">{me?.name}</div>
+            <div className="text-xs text-[var(--plan-text-muted)]">{me?.role}</div>
+          </div>
+        </div>
+        <ThemeToggle />
+      </div>
+    </aside>
+  );
+}
+```
+
+- [ ] **Step 3: Create Shell layout**
+
+Create `packages/app/src/components/layout/Shell.tsx`:
+```tsx
+import { Outlet } from "react-router-dom";
+import { Sidebar } from "./Sidebar";
+
+export function Shell() {
+  return (
+    <div className="flex min-h-screen">
+      <Sidebar />
+      <main className="flex-1 ml-[var(--sidebar-width)]">
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 4: Update App.tsx with routes**
+
+```tsx
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthGuard } from "./lib/auth";
+import { Shell } from "./components/layout/Shell";
+
+function HomePage() {
+  return (
+    <div className="p-8">
+      <h1 className="text-xl font-semibold text-[var(--plan-text-heading)]">
+        Welcome to PlanShare
+      </h1>
+      <p className="text-[var(--plan-text-secondary)] mt-2">
+        Select a folder from the sidebar to view plans.
+      </p>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthGuard>
+        <Routes>
+          <Route element={<Shell />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/f/:folderSlug" element={<div>Folder view (coming soon)</div>} />
+            <Route path="/f/:folderSlug/:planSlug" element={<div>Plan view (coming soon)</div>} />
+            <Route path="/admin/users" element={<div>Admin (coming soon)</div>} />
+          </Route>
+        </Routes>
+      </AuthGuard>
+    </BrowserRouter>
+  );
+}
+```
+
+- [ ] **Step 5: Verify shell layout renders**
+
+Run: `pnpm --filter @planshare/app dev`
+Expected: Sidebar with logo, folder list (empty), user info, theme toggle. Main content area shows welcome message.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add packages/app/src/components/layout/ packages/app/src/App.tsx
+git commit -m "feat: app shell with sidebar, routing, and theme toggle"
+```
+
+---
+
+## Chunk 5: Web App — Folder View, Plan View, Version Switcher
+
+### Task 21: Folder view page
+
+**Files:**
+- Create: `packages/app/src/pages/FolderView.tsx`
+- Create: `packages/app/src/components/plans/StatusBadge.tsx`
+- Create: `packages/app/src/components/plans/PlanCard.tsx`
+
+- [ ] **Step 1: Create StatusBadge component**
+
+Create `packages/app/src/components/plans/StatusBadge.tsx`:
+```tsx
+const STATUS_STYLES: Record<string, string> = {
+  draft: "bg-[var(--plan-bg-tertiary)] text-[var(--plan-text-muted)]",
+  in_review: "bg-blue-500/15 text-[var(--plan-accent)]",
+  approved: "bg-green-500/15 text-[var(--plan-success)]",
+  rejected: "bg-red-500/15 text-[var(--plan-danger)]",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  draft: "Draft",
+  in_review: "In Review",
+  approved: "Approved",
+  rejected: "Changes Requested",
+};
+
+export function StatusBadge({ status }: { status: string }) {
+  return (
+    <span
+      className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[status] ?? ""}`}
+    >
+      {STATUS_LABELS[status] ?? status}
+    </span>
+  );
+}
+```
+
+- [ ] **Step 2: Create PlanCard component**
+
+Create `packages/app/src/components/plans/PlanCard.tsx`:
+```tsx
+import { Link } from "react-router-dom";
+import { StatusBadge } from "./StatusBadge";
+import { Doc } from "../../../convex/_generated/dataModel";
+
+interface PlanCardProps {
+  plan: Doc<"plans">;
+  folderSlug: string;
+}
+
+export function PlanCard({ plan, folderSlug }: PlanCardProps) {
+  return (
+    <Link
+      to={`/f/${folderSlug}/${plan.slug}`}
+      className={`block bg-[var(--plan-bg-secondary)] border border-[var(--plan-border-subtle)] rounded-lg p-4 hover:border-[var(--plan-border)] transition-colors ${
+        plan.status === "draft" ? "opacity-60" : ""
+      }`}
+    >
+      <div className="flex justify-between items-start">
+        <div>
+          <h3 className="text-[var(--plan-text-heading)] font-medium">
+            {plan.title}
+          </h3>
+          <p className="text-xs text-[var(--plan-text-muted)] mt-1">
+            {new Date(plan.updatedAt).toLocaleDateString()}
+          </p>
+        </div>
+        <StatusBadge status={plan.status} />
+      </div>
+    </Link>
+  );
+}
+```
+
+- [ ] **Step 3: Create FolderView page**
+
+Create `packages/app/src/pages/FolderView.tsx`:
+```tsx
+import { useParams } from "react-router-dom";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { PlanCard } from "../components/plans/PlanCard";
+
+export function FolderView() {
+  const { folderSlug } = useParams<{ folderSlug: string }>();
+  const folders = useQuery(api.folders.list, {});
+  const folder = folders?.find((f) => f.slug === folderSlug);
+
+  const plans = useQuery(
+    api.plans.listByFolder,
+    folder ? { folderId: folder._id } : "skip"
+  );
+
+  if (!folder) {
+    return (
+      <div className="p-8 text-[var(--plan-text-muted)]">
+        Folder not found.
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-8 max-w-4xl">
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-[var(--plan-text-heading)]">
+          {folder.name}
+        </h1>
+        {folder.description && (
+          <p className="text-[var(--plan-text-secondary)] mt-1">
+            {folder.description}
+          </p>
+        )}
+        <p className="text-sm text-[var(--plan-text-muted)] mt-1">
+          {plans?.length ?? 0} plans
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {plans?.map((plan) => (
+          <PlanCard key={plan._id} plan={plan} folderSlug={folderSlug!} />
+        ))}
+        {plans?.length === 0 && (
+          <p className="text-[var(--plan-text-muted)] text-sm">
+            No plans in this folder yet. Push one with the CLI.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 4: Wire into App.tsx router**
+
+Update the `/f/:folderSlug` route in `App.tsx`:
+```tsx
+import { FolderView } from "./pages/FolderView";
+// ...
+<Route path="/f/:folderSlug" element={<FolderView />} />
+```
+
+- [ ] **Step 5: Verify folder view renders**
+
+Run: `pnpm --filter @planshare/app dev`
+Expected: Navigating to `/f/some-folder` shows the folder view (empty if no data yet).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add packages/app/src/pages/FolderView.tsx packages/app/src/components/plans/ packages/app/src/App.tsx
+git commit -m "feat: folder view with plan cards and status badges"
+```
+
+---
+
+### Task 22: Plan view page with version switcher
+
+**Files:**
+- Create: `packages/app/src/pages/PlanView.tsx`
+- Create: `packages/app/src/components/plans/VersionSwitcher.tsx`
+- Create: `packages/app/src/components/plans/PlanContent.tsx`
+
+- [ ] **Step 1: Create VersionSwitcher component**
+
+Create `packages/app/src/components/plans/VersionSwitcher.tsx`:
+```tsx
+import { Doc } from "../../../convex/_generated/dataModel";
+
+interface VersionSwitcherProps {
+  versions: Doc<"planVersions">[];
+  currentVersionId: string;
+  onVersionChange: (versionId: string) => void;
+}
+
+export function VersionSwitcher({
+  versions,
+  currentVersionId,
+  onVersionChange,
+}: VersionSwitcherProps) {
+  const sorted = [...versions].sort((a, b) => b.version - a.version);
+
+  return (
+    <select
+      value={currentVersionId}
+      onChange={(e) => onVersionChange(e.target.value)}
+      className="bg-[var(--plan-bg-secondary)] border border-[var(--plan-border)] rounded-md px-2 py-1 text-xs text-[var(--plan-text-primary)]"
+    >
+      {sorted.map((v) => (
+        <option key={v._id} value={v._id}>
+          v{v.version}
+          {v._id === versions.find((ver) => ver.version === Math.max(...versions.map((x) => x.version)))?._id
+            ? " (current)"
+            : ""}
+        </option>
+      ))}
+    </select>
+  );
+}
+```
+
+- [ ] **Step 2: Create PlanContent component**
+
+Create `packages/app/src/components/plans/PlanContent.tsx`:
+```tsx
+interface PlanContentProps {
+  htmlContent: string;
+}
+
+export function PlanContent({ htmlContent }: PlanContentProps) {
+  return (
+    <article
+      className="plan-content prose prose-sm max-w-none"
+      dangerouslySetInnerHTML={{ __html: htmlContent }}
+    />
+  );
+}
+```
+
+**Note:** `dangerouslySetInnerHTML` is acceptable here because the HTML is generated by our own renderer, not user input. The markdown is authored by trusted developers and rendered server-side.
+
+- [ ] **Step 3: Create PlanView page**
+
+Create `packages/app/src/pages/PlanView.tsx`:
+```tsx
+import { useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { StatusBadge } from "../components/plans/StatusBadge";
+import { VersionSwitcher } from "../components/plans/VersionSwitcher";
+import { PlanContent } from "../components/plans/PlanContent";
+
+export function PlanView() {
+  const { folderSlug, planSlug } = useParams();
+  const plan = useQuery(api.plans.getBySlug, { slug: planSlug! });
+  const versions = useQuery(
+    api.planVersions.listByPlan,
+    plan ? { planId: plan._id } : "skip"
+  );
+
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+
+  const currentVersion = versions?.find(
+    (v) => v._id === (selectedVersionId ?? plan?.currentVersionId)
+  );
+
+  const updateStatus = useMutation(api.plans.updateStatus);
+
+  if (!plan) {
+    return <div className="p-8 text-[var(--plan-text-muted)]">Plan not found.</div>;
+  }
+
+  return (
+    <div className="flex">
+      {/* Main content */}
+      <div className="flex-1 max-w-[var(--plan-content-width)] mx-auto px-8 py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-[var(--plan-border-subtle)]">
+          <Link
+            to={`/f/${folderSlug}`}
+            className="text-xs text-[var(--plan-accent)] hover:underline"
+          >
+            ← Back
+          </Link>
+          <div className="flex items-center gap-2">
+            {versions && versions.length > 0 && (
+              <VersionSwitcher
+                versions={versions}
+                currentVersionId={selectedVersionId ?? plan.currentVersionId ?? ""}
+                onVersionChange={setSelectedVersionId}
+              />
+            )}
+            <StatusBadge status={plan.status} />
+            {plan.status === "draft" && (
+              <button
+                onClick={() =>
+                  updateStatus({ planId: plan._id, status: "in_review" })
+                }
+                className="px-3 py-1 bg-[var(--plan-accent)] text-white text-xs rounded-md hover:opacity-90 transition-opacity"
+              >
+                Request Review
+              </button>
+            )}
+            {plan.status === "in_review" && (
+              <>
+                <button
+                  onClick={() => {
+                    // Will trigger review modal — implemented in Chunk 6
+                  }}
+                  className="px-3 py-1 bg-[var(--plan-success)] text-white text-xs rounded-md hover:opacity-90"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={() => {
+                    // Will trigger review modal — implemented in Chunk 6
+                  }}
+                  className="px-3 py-1 border border-[var(--plan-danger)] text-[var(--plan-danger)] text-xs rounded-md hover:bg-[var(--plan-danger-bg)]"
+                >
+                  Request Changes
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Plan content */}
+        {currentVersion && (
+          <>
+            <h1 className="text-2xl font-semibold text-[var(--plan-text-heading)] mb-1">
+              {plan.title}
+            </h1>
+            <p className="text-xs text-[var(--plan-text-muted)] mb-6">
+              v{currentVersion.version} · {new Date(currentVersion.pushedAt).toLocaleDateString()}
+              {currentVersion.changeNote && ` · ${currentVersion.changeNote}`}
+            </p>
+            <PlanContent htmlContent={currentVersion.htmlContent} />
+          </>
+        )}
+      </div>
+
+      {/* Right sidebar — will be expanded in Chunk 6 */}
+      <div className="w-56 border-l border-[var(--plan-border-subtle)] bg-[var(--plan-bg-secondary)] p-4 hidden lg:block">
+        <div className="text-xs text-[var(--plan-text-muted)] uppercase tracking-wider mb-2">
+          Versions
+        </div>
+        {versions?.sort((a, b) => b.version - a.version).map((v) => (
+          <button
+            key={v._id}
+            onClick={() => setSelectedVersionId(v._id)}
+            className={`block w-full text-left text-sm px-2 py-1 rounded ${
+              v._id === (selectedVersionId ?? plan.currentVersionId)
+                ? "text-[var(--plan-accent)]"
+                : "text-[var(--plan-text-muted)] hover:text-[var(--plan-text-primary)]"
+            }`}
+          >
+            v{v.version}
+            {v._id === plan.currentVersionId ? " — current" : ""}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 4: Wire into App.tsx router**
+
+```tsx
+import { PlanView } from "./pages/PlanView";
+// ...
+<Route path="/f/:folderSlug/:planSlug" element={<PlanView />} />
+```
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add packages/app/src/pages/PlanView.tsx packages/app/src/components/plans/ packages/app/src/App.tsx
+git commit -m "feat: plan view with version switcher and status actions"
+```
+
+---
+
+## Chunk 6: Web App — Comments, Reviews, Timeline
+
+### Task 23: Paragraph-level comment system
+
+**Files:**
+- Create: `packages/app/src/components/comments/CommentAnchor.tsx`
+- Create: `packages/app/src/components/comments/CommentThread.tsx`
+- Create: `packages/app/src/components/comments/CommentComposer.tsx`
+- Modify: `packages/app/src/components/plans/PlanContent.tsx`
+
+- [ ] **Step 1: Create CommentComposer**
+
+Create `packages/app/src/components/comments/CommentComposer.tsx`:
+```tsx
+import { useState } from "react";
+
+interface CommentComposerProps {
+  onSubmit: (body: string) => void;
+  onCancel: () => void;
+  placeholder?: string;
+}
+
+export function CommentComposer({ onSubmit, onCancel, placeholder }: CommentComposerProps) {
+  const [body, setBody] = useState("");
+
+  return (
+    <div className="bg-[var(--plan-comment-bg)] border border-[var(--plan-border)] rounded-lg p-3 mt-2">
+      <textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        placeholder={placeholder ?? "Leave a comment..."}
+        className="w-full bg-[var(--plan-bg)] border border-[var(--plan-border)] rounded-md p-2 text-sm text-[var(--plan-text-primary)] resize-none focus:outline-none focus:border-[var(--plan-accent)]"
+        rows={3}
+        autoFocus
+      />
+      <div className="flex justify-end gap-2 mt-2">
+        <button
+          onClick={onCancel}
+          className="px-3 py-1 text-xs text-[var(--plan-text-secondary)] hover:text-[var(--plan-text-primary)]"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={() => {
+            if (body.trim()) {
+              onSubmit(body.trim());
+              setBody("");
+            }
+          }}
+          disabled={!body.trim()}
+          className="px-3 py-1 text-xs bg-[var(--plan-accent)] text-white rounded-md hover:opacity-90 disabled:opacity-50"
+        >
+          Comment
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 2: Create CommentThread**
+
+Create `packages/app/src/components/comments/CommentThread.tsx`:
+```tsx
+import { useState } from "react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Doc } from "../../../convex/_generated/dataModel";
+import { CommentComposer } from "./CommentComposer";
+
+interface CommentThreadProps {
+  comment: Doc<"comments">;
+}
+
+export function CommentThread({ comment }: CommentThreadProps) {
+  const [showReply, setShowReply] = useState(false);
+  const replies = useQuery(api.comments.listReplies, { commentId: comment._id });
+  const replyMutation = useMutation(api.comments.reply);
+  const resolveMutation = useMutation(api.comments.resolve);
+
+  return (
+    <div
+      className={`border-l-2 pl-4 my-3 ${
+        comment.resolved
+          ? "border-[var(--plan-border-subtle)] opacity-60"
+          : "border-[var(--plan-comment-border)]"
+      }`}
+    >
+      <div className="text-sm text-[var(--plan-text-primary)]">{comment.body}</div>
+      <div className="flex items-center gap-3 mt-1 text-xs text-[var(--plan-text-muted)]">
+        <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
+        <button
+          onClick={() => setShowReply(!showReply)}
+          className="hover:text-[var(--plan-accent)]"
+        >
+          Reply
+        </button>
+        <button
+          onClick={() =>
+            resolveMutation({
+              commentId: comment._id,
+              resolved: !comment.resolved,
+            })
+          }
+          className="hover:text-[var(--plan-accent)]"
+        >
+          {comment.resolved ? "Unresolve" : "Resolve"}
+        </button>
+      </div>
+
+      {/* Replies */}
+      {replies?.map((reply) => (
+        <div key={reply._id} className="ml-4 mt-2 pt-2 border-t border-[var(--plan-border-subtle)]">
+          <div className="text-sm text-[var(--plan-text-primary)]">{reply.body}</div>
+          <div className="text-xs text-[var(--plan-text-muted)] mt-1">
+            {new Date(reply.createdAt).toLocaleDateString()}
+          </div>
+        </div>
+      ))}
+
+      {showReply && (
+        <CommentComposer
+          placeholder="Reply..."
+          onSubmit={async (body) => {
+            await replyMutation({ commentId: comment._id, body });
+            setShowReply(false);
+          }}
+          onCancel={() => setShowReply(false)}
+        />
+      )}
+    </div>
+  );
+}
+```
+
+- [ ] **Step 3: Create CommentAnchor — wraps paragraphs with comment triggers**
+
+Create `packages/app/src/components/comments/CommentAnchor.tsx`:
+```tsx
+import { useState, useEffect, useRef } from "react";
+import { useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Doc, Id } from "../../../convex/_generated/dataModel";
+import { CommentComposer } from "./CommentComposer";
+import { CommentThread } from "./CommentThread";
+
+interface CommentAnchorProps {
+  planId: Id<"plans">;
+  versionId: Id<"planVersions">;
+  paragraphId: string;
+  comments: Doc<"comments">[];
+  children: React.ReactNode;
+}
+
+export function CommentAnchor({
+  planId,
+  versionId,
+  paragraphId,
+  comments,
+  children,
+}: CommentAnchorProps) {
+  const [showComposer, setShowComposer] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const createComment = useMutation(api.comments.create);
+
+  const paraComments = comments.filter((c) => c.paragraphId === paragraphId);
+  const hasComments = paraComments.length > 0;
+
+  return (
+    <div
+      className="relative group"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Comment trigger button */}
+      {(isHovered || hasComments) && (
+        <button
+          onClick={() => setShowComposer(true)}
+          className={`absolute -right-10 top-0 w-7 h-7 rounded-full flex items-center justify-center text-sm transition-opacity ${
+            hasComments
+              ? "bg-[var(--plan-accent)] text-white opacity-80"
+              : "bg-[var(--plan-bg-tertiary)] text-[var(--plan-text-muted)] opacity-0 group-hover:opacity-80"
+          }`}
+        >
+          {hasComments ? paraComments.length : "💬"}
+        </button>
+      )}
+
+      {/* Paragraph content */}
+      <div
+        className={
+          hasComments || showComposer
+            ? "bg-[var(--plan-comment-highlight)] -mx-4 px-4 py-1 rounded"
+            : ""
+        }
+      >
+        {children}
+      </div>
+
+      {/* Comment threads */}
+      {paraComments.map((comment) => (
+        <CommentThread key={comment._id} comment={comment} />
+      ))}
+
+      {/* New comment composer */}
+      {showComposer && (
+        <CommentComposer
+          onSubmit={async (body) => {
+            await createComment({ planId, versionId, paragraphId, body });
+            setShowComposer(false);
+          }}
+          onCancel={() => setShowComposer(false)}
+        />
+      )}
+    </div>
+  );
+}
+```
+
+- [ ] **Step 4: Update PlanContent to inject comment anchors**
+
+Update `packages/app/src/components/plans/PlanContent.tsx`:
+```tsx
+import { useEffect, useRef } from "react";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
+import { CommentAnchor } from "../comments/CommentAnchor";
+import { createPortal } from "react-dom";
+
+interface PlanContentProps {
+  htmlContent: string;
+  planId: Id<"plans">;
+  versionId: Id<"planVersions">;
+}
+
+export function PlanContent({ htmlContent, planId, versionId }: PlanContentProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const comments = useQuery(api.comments.listByVersion, { versionId }) ?? [];
+
+  // Parse HTML and identify commentable paragraphs
+  // For Phase 1, render the HTML and overlay comment anchors using data-paragraph-id attributes
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    // Find all elements with data-paragraph-id
+    const commentables = containerRef.current.querySelectorAll("[data-paragraph-id]");
+    commentables.forEach((el) => {
+      el.classList.add("relative");
+    });
+  }, [htmlContent]);
+
+  return (
+    <div ref={containerRef}>
+      <div
+        className="plan-content"
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
+      {/* Comment anchors rendered as overlays — simplified for Phase 1 */}
+      {/* Full implementation will use a more sophisticated approach */}
+    </div>
+  );
+}
+```
+
+**Note:** The comment overlay approach will need refinement during implementation. The plan provides the component architecture; the exact DOM integration strategy (portal-based overlays vs. React-rendered HTML replacement) should be determined during development based on what works best with the rendered HTML.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add packages/app/src/components/comments/ packages/app/src/components/plans/PlanContent.tsx
+git commit -m "feat: paragraph-level comment system with threads and replies"
+```
+
+---
+
+### Task 24: Review timeline component
+
+**Files:**
+- Create: `packages/app/src/components/timeline/ReviewTimeline.tsx`
+- Create: `packages/app/src/components/timeline/TimelineEntry.tsx`
+
+- [ ] **Step 1: Create TimelineEntry**
+
+Create `packages/app/src/components/timeline/TimelineEntry.tsx`:
+```tsx
+interface TimelineEntryProps {
+  type: "approved" | "changes_requested" | "version_pushed" | "created" | "review_requested";
+  authorName: string;
+  timestamp: number;
+  note?: string;
+  versionNumber?: number;
+}
+
+const TYPE_STYLES: Record<string, { dot: string; label: string }> = {
+  approved: { dot: "bg-[var(--plan-success)]", label: "Approved" },
+  changes_requested: { dot: "bg-[var(--plan-danger)]", label: "Requested changes" },
+  version_pushed: { dot: "bg-[var(--plan-accent)]", label: "Pushed" },
+  created: { dot: "bg-[var(--plan-text-muted)]", label: "Created plan" },
+  review_requested: { dot: "bg-[var(--plan-accent)]", label: "Requested review" },
+};
+
+export function TimelineEntry({ type, authorName, timestamp, note, versionNumber }: TimelineEntryProps) {
+  const style = TYPE_STYLES[type];
+
+  return (
+    <div className="relative pl-5 pb-4">
+      {/* Dot */}
+      <div className={`absolute left-0 top-1.5 w-2.5 h-2.5 rounded-full ${style.dot}`} />
+      {/* Line */}
+      <div className="absolute left-[4.5px] top-4 bottom-0 w-px bg-[var(--plan-border-subtle)]" />
+
+      <div className="text-sm">
+        <span className="text-[var(--plan-text-heading)] font-medium">{authorName}</span>
+        <span className="text-[var(--plan-text-muted)]">
+          {" "}{style.label}
+          {versionNumber ? ` v${versionNumber}` : ""}
+        </span>
+      </div>
+      {note && (
+        <p className="text-xs text-[var(--plan-text-muted)] mt-0.5 italic">"{note}"</p>
+      )}
+      <div className="text-xs text-[var(--plan-text-muted)] mt-0.5">
+        {new Date(timestamp).toLocaleString()}
+      </div>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 2: Create ReviewTimeline**
+
+Create `packages/app/src/components/timeline/ReviewTimeline.tsx`:
+```tsx
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
+import { TimelineEntry } from "./TimelineEntry";
+
+interface ReviewTimelineProps {
+  planId: Id<"plans">;
+  planCreatedAt: number;
+  planCreatedByName: string;
+}
+
+export function ReviewTimeline({ planId, planCreatedAt, planCreatedByName }: ReviewTimelineProps) {
+  const reviews = useQuery(api.reviews.listByPlan, { planId }) ?? [];
+  const versions = useQuery(api.planVersions.listByPlan, { planId }) ?? [];
+
+  // Build timeline events from reviews + versions + creation
+  type TimelineEvent = {
+    type: "approved" | "changes_requested" | "version_pushed" | "created";
+    authorName: string;
+    timestamp: number;
+    note?: string;
+    versionNumber?: number;
+  };
+
+  const events: TimelineEvent[] = [];
+
+  // Add reviews
+  for (const review of reviews) {
+    events.push({
+      type: review.action,
+      authorName: "Reviewer", // Will be enriched with user lookup
+      timestamp: review.createdAt,
+      note: review.note ?? undefined,
+    });
+  }
+
+  // Add version pushes
+  for (const version of versions) {
+    events.push({
+      type: "version_pushed",
+      authorName: "Author", // Will be enriched
+      timestamp: version.pushedAt,
+      versionNumber: version.version,
+      note: version.changeNote ?? undefined,
+    });
+  }
+
+  // Add creation
+  events.push({
+    type: "created",
+    authorName: planCreatedByName,
+    timestamp: planCreatedAt,
+  });
+
+  // Sort newest first
+  events.sort((a, b) => b.timestamp - a.timestamp);
+
+  return (
+    <div>
+      <div className="text-xs text-[var(--plan-text-muted)] uppercase tracking-wider mb-3">
+        Activity
+      </div>
+      {events.map((event, i) => (
+        <TimelineEntry key={i} {...event} />
+      ))}
+    </div>
+  );
+}
+```
+
+- [ ] **Step 3: Wire ReviewTimeline into PlanView right sidebar**
+
+Add to the right sidebar section of `packages/app/src/pages/PlanView.tsx`:
+```tsx
+import { ReviewTimeline } from "../components/timeline/ReviewTimeline";
+
+// Inside the right sidebar div:
+<ReviewTimeline
+  planId={plan._id}
+  planCreatedAt={plan.createdAt}
+  planCreatedByName="Author" // Will be enriched with user data
+/>
+```
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add packages/app/src/components/timeline/ packages/app/src/pages/PlanView.tsx
+git commit -m "feat: review timeline with approval, rejection, and version events"
+```
+
+---
+
+### Task 25: Review submission (approve / request changes)
+
+**Files:**
+- Create: `packages/app/src/components/plans/ReviewModal.tsx`
+- Modify: `packages/app/src/pages/PlanView.tsx`
+
+- [ ] **Step 1: Create ReviewModal**
+
+Create `packages/app/src/components/plans/ReviewModal.tsx`:
+```tsx
+import { useState } from "react";
+
+interface ReviewModalProps {
+  action: "approved" | "changes_requested";
+  onSubmit: (note: string) => void;
+  onClose: () => void;
+}
+
+export function ReviewModal({ action, onSubmit, onClose }: ReviewModalProps) {
+  const [note, setNote] = useState("");
+  const isApproval = action === "approved";
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-[var(--plan-bg)] border border-[var(--plan-border)] rounded-lg p-6 w-full max-w-md shadow-xl">
+        <h3 className="text-lg font-semibold text-[var(--plan-text-heading)] mb-2">
+          {isApproval ? "Approve Plan" : "Request Changes"}
+        </h3>
+        <p className="text-sm text-[var(--plan-text-secondary)] mb-4">
+          {isApproval
+            ? "Confirm this plan is ready for implementation."
+            : "Describe what needs to change before this can be approved."}
+        </p>
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder={isApproval ? "Optional note..." : "What needs to change?"}
+          className="w-full bg-[var(--plan-bg-secondary)] border border-[var(--plan-border)] rounded-md p-3 text-sm text-[var(--plan-text-primary)] resize-none focus:outline-none focus:border-[var(--plan-accent)]"
+          rows={3}
+          autoFocus={!isApproval}
+        />
+        <div className="flex justify-end gap-2 mt-4">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm text-[var(--plan-text-secondary)] hover:text-[var(--plan-text-primary)]"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onSubmit(note)}
+            className={`px-4 py-2 text-sm text-white rounded-md ${
+              isApproval
+                ? "bg-[var(--plan-success)] hover:opacity-90"
+                : "bg-[var(--plan-danger)] hover:opacity-90"
+            }`}
+          >
+            {isApproval ? "Approve" : "Request Changes"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 2: Wire ReviewModal into PlanView**
+
+Update `packages/app/src/pages/PlanView.tsx` — add state and handlers:
+```tsx
+import { ReviewModal } from "../components/plans/ReviewModal";
+
+// Add inside PlanView component:
+const [reviewAction, setReviewAction] = useState<"approved" | "changes_requested" | null>(null);
+const submitReview = useMutation(api.reviews.submit);
+
+// Replace the Approve/Request Changes button onClick handlers:
+// Approve button:
+onClick={() => setReviewAction("approved")}
+// Request Changes button:
+onClick={() => setReviewAction("changes_requested")}
+
+// Add before closing </div> of the component:
+{reviewAction && currentVersion && (
+  <ReviewModal
+    action={reviewAction}
+    onSubmit={async (note) => {
+      await submitReview({
+        planId: plan._id,
+        versionId: currentVersion._id,
+        action: reviewAction,
+        note: note || undefined,
+      });
+      setReviewAction(null);
+    }}
+    onClose={() => setReviewAction(null)}
+  />
+)}
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add packages/app/src/components/plans/ReviewModal.tsx packages/app/src/pages/PlanView.tsx
+git commit -m "feat: review submission modal with approve and request changes"
+```
+
+---
+
+### Task 26: Copy-to-Linear button
+
+**Files:**
+- Modify: `packages/app/src/pages/PlanView.tsx`
+
+- [ ] **Step 1: Add copy button to right sidebar**
+
+Add to the right sidebar in `PlanView.tsx`:
+```tsx
+<div className="mt-4 pt-4 border-t border-[var(--plan-border-subtle)]">
+  <div className="text-xs text-[var(--plan-text-muted)] uppercase tracking-wider mb-2">
+    Actions
+  </div>
+  <button
+    onClick={async () => {
+      if (currentVersion) {
+        await navigator.clipboard.writeText(currentVersion.markdownContent);
+        // TODO: show toast notification
+        alert("Copied markdown to clipboard!");
+      }
+    }}
+    className="w-full text-left px-2 py-2 text-sm text-[var(--plan-text-primary)] bg-[var(--plan-bg)] border border-[var(--plan-border)] rounded-md hover:bg-[var(--plan-bg-hover)] transition-colors"
+  >
+    📋 Copy for Linear
+  </button>
+  <button
+    onClick={() => {
+      navigator.clipboard.writeText(window.location.href);
+      alert("Link copied!");
+    }}
+    className="w-full text-left px-2 py-2 mt-2 text-sm text-[var(--plan-text-primary)] bg-[var(--plan-bg)] border border-[var(--plan-border)] rounded-md hover:bg-[var(--plan-bg-hover)] transition-colors"
+  >
+    🔗 Copy Link
+  </button>
+</div>
+```
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add packages/app/src/pages/PlanView.tsx
+git commit -m "feat: copy-to-Linear and copy-link buttons"
+```
+
+---
+
+## Chunk 7: CLI — Auth, Commands, Interactive Push
+
+### Task 27: CLI auth (Google OAuth localhost redirect)
+
+**Files:**
+- Modify: `packages/cli/src/index.ts`
+- Create: `packages/cli/src/commands/login.ts`
+- Create: `packages/cli/src/lib/auth.ts`
+- Create: `packages/cli/src/lib/api.ts`
+
+- [ ] **Step 1: Create packages/cli/src/lib/auth.ts**
+
+```typescript
+import fs from "fs";
+import path from "path";
+import os from "os";
+
+const CONFIG_DIR = path.join(os.homedir(), ".plan-push");
+const CREDENTIALS_FILE = path.join(CONFIG_DIR, "credentials.json");
+const CONFIG_FILE = path.join(CONFIG_DIR, "config.json");
+
+export function ensureConfigDir() {
+  if (!fs.existsSync(CONFIG_DIR)) {
+    fs.mkdirSync(CONFIG_DIR, { recursive: true });
+  }
+}
+
+export function getStoredToken(): string | null {
+  try {
+    const data = JSON.parse(fs.readFileSync(CREDENTIALS_FILE, "utf-8"));
+    return data.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function storeToken(token: string) {
+  ensureConfigDir();
+  fs.writeFileSync(CREDENTIALS_FILE, JSON.stringify({ token }, null, 2));
+}
+
+export function getConvexUrl(): string {
+  // 1. PLANSHARE_URL env var
+  if (process.env.PLANSHARE_URL) return process.env.PLANSHARE_URL;
+
+  // 2. .env.local in current directory
+  try {
+    const envLocal = fs.readFileSync(
+      path.join(process.cwd(), ".env.local"),
+      "utf-8"
+    );
+    const match = envLocal.match(/VITE_CONVEX_URL=(.+)/);
+    if (match) return match[1].trim();
+  } catch {}
+
+  // 3. Stored config
+  try {
+    const config = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf-8"));
+    if (config.convexUrl) return config.convexUrl;
+  } catch {}
+
+  throw new Error(
+    "Could not find Convex URL. Set PLANSHARE_URL env var, or run from a directory with .env.local"
+  );
+}
+
+export function storeConfig(config: Record<string, string>) {
+  ensureConfigDir();
+  let existing: Record<string, string> = {};
+  try {
+    existing = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf-8"));
+  } catch {}
+  fs.writeFileSync(
+    CONFIG_FILE,
+    JSON.stringify({ ...existing, ...config }, null, 2)
+  );
+}
+```
+
+- [ ] **Step 2: Create packages/cli/src/lib/api.ts**
+
+```typescript
+import { getStoredToken, getConvexUrl } from "./auth";
+
+export async function apiRequest(
+  path: string,
+  options: {
+    method?: string;
+    body?: Record<string, unknown>;
+    params?: Record<string, string>;
+  } = {}
+) {
+  const token = getStoredToken();
+  if (!token) throw new Error("Not authenticated. Run: plan-push login");
+
+  const baseUrl = getConvexUrl();
+  const url = new URL(path, baseUrl);
+
+  if (options.params) {
+    for (const [key, value] of Object.entries(options.params)) {
+      url.searchParams.set(key, value);
+    }
+  }
+
+  const maxRetries = 3;
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch(url.toString(), {
+        method: options.method ?? "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: options.body ? JSON.stringify(options.body) : undefined,
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`API error (${response.status}): ${errorBody}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      lastError = error as Error;
+      if (attempt < maxRetries - 1) {
+        const delay = Math.pow(2, attempt) * 1000;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw new Error(
+    `Failed after ${maxRetries} attempts: ${lastError?.message}\nEndpoint: ${url}`
+  );
+}
+```
+
+- [ ] **Step 3: Create packages/cli/src/commands/login.ts**
+
+```typescript
+import http from "http";
+import open from "open";
+import { storeToken, storeConfig } from "../lib/auth";
+
+export async function loginCommand() {
+  console.log("Opening browser for Google sign-in...\n");
+
+  // This is a simplified version. In production, this would:
+  // 1. Start a local HTTP server on a random port
+  // 2. Open Google OAuth consent URL
+  // 3. Receive the callback with auth code
+  // 4. Exchange code for token via Convex HTTP endpoint
+  // 5. Store the Convex session token
+
+  // For now, prompt for manual token entry (to be replaced with full OAuth flow)
+  const inquirer = await import("inquirer");
+  const { token } = await inquirer.default.prompt([
+    {
+      type: "input",
+      name: "token",
+      message: "Paste your auth token (from PlanShare settings):",
+    },
+  ]);
+
+  storeToken(token);
+  console.log("\n✓ Logged in successfully. Token stored at ~/.plan-push/credentials.json");
+}
+```
+
+**Note:** Full Google OAuth localhost redirect flow is complex. Phase 1 uses a manual token paste from the web app's settings page. The full OAuth device flow can be added in a follow-up.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add packages/cli/src/lib/ packages/cli/src/commands/login.ts
+git commit -m "feat: CLI auth, API client, and config management"
+```
+
+---
+
+### Task 28: CLI push command (interactive + flags)
+
+**Files:**
+- Create: `packages/cli/src/commands/push.ts`
+- Create: `packages/cli/src/commands/folders.ts`
+- Create: `packages/cli/src/commands/plans.ts`
+- Modify: `packages/cli/src/index.ts`
+
+- [ ] **Step 1: Create packages/cli/src/commands/folders.ts**
+
+```typescript
+import { apiRequest } from "../lib/api";
+
+export async function foldersCommand() {
+  const folders = await apiRequest("/api/folders");
+
+  if (folders.length === 0) {
+    console.log("No folders yet.");
+    return;
+  }
+
+  console.log("\nFolders:\n");
+  for (const folder of folders) {
+    console.log(`  ${folder.name} (${folder.slug})`);
+  }
+  console.log("");
+}
+```
+
+- [ ] **Step 2: Create packages/cli/src/commands/plans.ts**
+
+```typescript
+import { apiRequest } from "../lib/api";
+
+export async function plansCommand(folderSlug: string) {
+  // First get folders to find the ID
+  const folders = await apiRequest("/api/folders");
+  const folder = folders.find((f: any) => f.slug === folderSlug);
+
+  if (!folder) {
+    console.error(`Folder not found: ${folderSlug}`);
+    process.exit(1);
+  }
+
+  const plans = await apiRequest("/api/plans", {
+    params: { folderId: folder._id },
+  });
+
+  if (plans.length === 0) {
+    console.log(`No plans in "${folder.name}".`);
+    return;
+  }
+
+  console.log(`\nPlans in "${folder.name}":\n`);
+  for (const plan of plans) {
+    console.log(`  ${plan.title} (${plan.slug}) — ${plan.status}`);
+  }
+  console.log("");
+}
+```
+
+- [ ] **Step 3: Create packages/cli/src/commands/push.ts**
+
+```typescript
+import fs from "fs";
+import { apiRequest } from "../lib/api";
+import { renderMarkdown } from "@planshare/renderer";
+
+export async function pushCommand(
+  filePath: string,
+  options: {
+    folder?: string;
+    plan?: string;
+    title?: string;
+    note?: string;
+  }
+) {
+  // Read markdown file
+  if (!fs.existsSync(filePath)) {
+    console.error(`File not found: ${filePath}`);
+    process.exit(1);
+  }
+
+  const markdown = fs.readFileSync(filePath, "utf-8");
+
+  // Validate markdown
+  const h1Match = markdown.match(/^#\s+(.+)$/m);
+  if (!h1Match) {
+    console.warn("Warning: No H1 heading found in markdown. Title will need to be provided.");
+  }
+
+  // Render to HTML
+  const { html } = await renderMarkdown(markdown);
+
+  // Get folders for selection
+  const folders = await apiRequest("/api/folders");
+
+  let folderId: string;
+  let planId: string | null = null;
+  let title: string;
+
+  if (options.folder && options.title && !options.plan) {
+    // Flag mode: new plan
+    const folder = folders.find((f: any) => f.slug === options.folder);
+    if (!folder) {
+      console.error(`Folder not found: ${options.folder}`);
+      process.exit(1);
+    }
+    folderId = folder._id;
+    title = options.title;
+  } else if (options.plan) {
+    // Flag mode: update existing plan
+    planId = options.plan;
+    folderId = ""; // not needed for update
+    title = ""; // not needed for update
+  } else {
+    // Interactive mode
+    const inquirer = await import("inquirer");
+
+    const { action } = await inquirer.default.prompt([
+      {
+        type: "list",
+        name: "action",
+        message: "New plan or update existing?",
+        choices: ["New plan", "Update existing"],
+      },
+    ]);
+
+    if (action === "New plan") {
+      const { selectedFolder } = await inquirer.default.prompt([
+        {
+          type: "list",
+          name: "selectedFolder",
+          message: "Which folder?",
+          choices: folders.map((f: any) => ({
+            name: f.name,
+            value: f._id,
+          })),
+        },
+      ]);
+      folderId = selectedFolder;
+
+      const { inputTitle } = await inquirer.default.prompt([
+        {
+          type: "input",
+          name: "inputTitle",
+          message: "Plan title:",
+          default: h1Match?.[1] ?? "",
+        },
+      ]);
+      title = inputTitle;
+    } else {
+      // Select folder then plan
+      const { selectedFolder } = await inquirer.default.prompt([
+        {
+          type: "list",
+          name: "selectedFolder",
+          message: "Which folder?",
+          choices: folders.map((f: any) => ({
+            name: f.name,
+            value: f._id,
+          })),
+        },
+      ]);
+
+      const plans = await apiRequest("/api/plans", {
+        params: { folderId: selectedFolder },
+      });
+
+      const { selectedPlan } = await inquirer.default.prompt([
+        {
+          type: "list",
+          name: "selectedPlan",
+          message: "Which plan?",
+          choices: plans.map((p: any) => ({
+            name: `${p.title} (${p.status})`,
+            value: p._id,
+          })),
+        },
+      ]);
+
+      planId = selectedPlan;
+      folderId = selectedFolder;
+      title = ""; // not needed for update
+    }
+  }
+
+  // Get change note for updates
+  let changeNote = options.note;
+  if (planId && !changeNote) {
+    const inquirer = await import("inquirer");
+    const { note } = await inquirer.default.prompt([
+      {
+        type: "input",
+        name: "note",
+        message: "Change note (optional):",
+      },
+    ]);
+    changeNote = note || undefined;
+  }
+
+  // Push
+  console.log("\nPushing...");
+  const result = await apiRequest("/api/push", {
+    method: "POST",
+    body: {
+      folderId: folderId || undefined,
+      planId: planId || undefined,
+      title: title || undefined,
+      markdownContent: markdown,
+      htmlContent: html,
+      changeNote,
+    },
+  });
+
+  console.log(`\n✓ Published → ${result.planId}`);
+  console.log(`  Version: ${result.versionId}\n`);
+}
+```
+
+- [ ] **Step 4: Wire all commands into index.ts**
+
+Replace `packages/cli/src/index.ts`:
+```typescript
+#!/usr/bin/env node
+import { Command } from "commander";
+import { loginCommand } from "./commands/login";
+import { foldersCommand } from "./commands/folders";
+import { plansCommand } from "./commands/plans";
+import { pushCommand } from "./commands/push";
+
+const program = new Command();
+
+program
+  .name("plan-push")
+  .description("Publish plans to PlanShare")
+  .version("0.1.0");
+
+program
+  .command("login")
+  .description("Sign in to PlanShare")
+  .action(loginCommand);
+
+program
+  .command("folders")
+  .description("List folders")
+  .action(foldersCommand);
+
+program
+  .command("plans <folder>")
+  .description("List plans in a folder")
+  .action(plansCommand);
+
+program
+  .command("push <file>")
+  .description("Push a plan (interactive by default)")
+  .option("--folder <slug>", "Target folder slug (for new plans)")
+  .option("--plan <id>", "Plan ID to update")
+  .option("--title <title>", "Plan title (for new plans)")
+  .option("--note <note>", "Change note (for updates)")
+  .action(pushCommand);
+
+program.parse();
+```
+
+- [ ] **Step 5: Verify CLI commands work**
+
+Run: `pnpm --filter @planshare/cli dev -- --help`
+Expected: Shows all commands (login, folders, plans, push).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add packages/cli/src/
+git commit -m "feat: CLI commands — login, folders, plans, push (interactive + flags)"
+```
+
+---
+
+## Chunk 8: Admin, Responsive, Integration Tests, Final Polish
+
+### Task 29: Admin user management page
+
+**Files:**
+- Create: `packages/app/src/pages/AdminUsers.tsx`
+- Modify: `packages/app/src/App.tsx`
+
+- [ ] **Step 1: Create AdminUsers page**
+
+Create `packages/app/src/pages/AdminUsers.tsx`:
+```tsx
+import { useState } from "react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+
+export function AdminUsers() {
+  const me = useQuery(api.users.me, {});
+  const users = useQuery(api.users.list, {});
+  const invites = useQuery(api.invites.list, {});
+  const createInvite = useMutation(api.invites.create);
+  const [email, setEmail] = useState("");
+
+  if (me?.role !== "admin") {
+    return (
+      <div className="p-8 text-[var(--plan-text-muted)]">
+        Admin access required.
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-8 max-w-2xl">
+      <h1 className="text-xl font-semibold text-[var(--plan-text-heading)] mb-6">
+        User Management
+      </h1>
+
+      {/* Invite form */}
+      <div className="mb-8">
+        <h2 className="text-sm font-medium text-[var(--plan-text-heading)] mb-2">
+          Invite User
+        </h2>
+        <div className="flex gap-2">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="email@example.com"
+            className="flex-1 bg-[var(--plan-bg-secondary)] border border-[var(--plan-border)] rounded-md px-3 py-2 text-sm text-[var(--plan-text-primary)] focus:outline-none focus:border-[var(--plan-accent)]"
+          />
+          <button
+            onClick={async () => {
+              if (email.trim()) {
+                await createInvite({ email: email.trim() });
+                setEmail("");
+              }
+            }}
+            className="px-4 py-2 text-sm bg-[var(--plan-accent)] text-white rounded-md hover:opacity-90"
+          >
+            Send Invite
+          </button>
+        </div>
+      </div>
+
+      {/* Active users */}
+      <div className="mb-8">
+        <h2 className="text-sm font-medium text-[var(--plan-text-heading)] mb-2">
+          Active Users ({users?.length ?? 0})
+        </h2>
+        <div className="border border-[var(--plan-border)] rounded-lg overflow-hidden">
+          {users?.map((user) => (
+            <div
+              key={user._id}
+              className="flex items-center justify-between px-4 py-3 border-b border-[var(--plan-border-subtle)] last:border-b-0"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-[var(--plan-accent)] flex items-center justify-center text-white text-xs font-semibold">
+                  {user.name[0]}
+                </div>
+                <div>
+                  <div className="text-sm text-[var(--plan-text-heading)]">{user.name}</div>
+                  <div className="text-xs text-[var(--plan-text-muted)]">{user.email}</div>
+                </div>
+              </div>
+              <span className="text-xs text-[var(--plan-text-muted)] capitalize">
+                {user.role}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Pending invites */}
+      <div>
+        <h2 className="text-sm font-medium text-[var(--plan-text-heading)] mb-2">
+          Pending Invites
+        </h2>
+        <div className="border border-[var(--plan-border)] rounded-lg overflow-hidden">
+          {invites?.filter((i) => !i.acceptedAt).map((invite) => (
+            <div
+              key={invite._id}
+              className="flex items-center justify-between px-4 py-3 border-b border-[var(--plan-border-subtle)] last:border-b-0"
+            >
+              <span className="text-sm text-[var(--plan-text-primary)]">{invite.email}</span>
+              <span className="text-xs text-[var(--plan-text-muted)]">
+                Invited {new Date(invite.createdAt).toLocaleDateString()}
+              </span>
+            </div>
+          ))}
+          {(!invites || invites.filter((i) => !i.acceptedAt).length === 0) && (
+            <div className="px-4 py-3 text-sm text-[var(--plan-text-muted)]">
+              No pending invites.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 2: Wire into router**
+
+Update `App.tsx`:
+```tsx
+import { AdminUsers } from "./pages/AdminUsers";
+// ...
+<Route path="/admin/users" element={<AdminUsers />} />
+```
+
+Add admin link to Sidebar:
+```tsx
+{me?.role === "admin" && (
+  <Link
+    to="/admin/users"
+    className="block px-3 py-2 mt-2 rounded-md text-sm text-[var(--plan-text-secondary)] hover:bg-[var(--plan-bg-hover)] border-t border-[var(--sidebar-border)] pt-3"
+  >
+    ⚙️ User Management
+  </Link>
+)}
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add packages/app/src/pages/AdminUsers.tsx packages/app/src/App.tsx packages/app/src/components/layout/Sidebar.tsx
+git commit -m "feat: admin user management page with invite form"
+```
+
+---
+
+### Task 30: Responsive layout (mobile sidebar collapse)
+
+**Files:**
+- Modify: `packages/app/src/components/layout/Shell.tsx`
+- Modify: `packages/app/src/components/layout/Sidebar.tsx`
+
+- [ ] **Step 1: Add mobile sidebar toggle**
+
+Update `Shell.tsx`:
+```tsx
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
+import { Sidebar } from "./Sidebar";
+
+export function Shell() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  return (
+    <div className="flex min-h-screen">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={`fixed z-50 lg:static lg:block transition-transform duration-200 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
+      >
+        <Sidebar onClose={() => setSidebarOpen(false)} />
+      </div>
+
+      {/* Main content */}
+      <main className="flex-1 lg:ml-[var(--sidebar-width)]">
+        {/* Mobile header */}
+        <div className="lg:hidden flex items-center gap-3 p-4 border-b border-[var(--plan-border-subtle)]">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-md hover:bg-[var(--plan-bg-hover)]"
+          >
+            ☰
+          </button>
+          <span className="font-semibold text-[var(--plan-text-heading)]">PlanShare</span>
+        </div>
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 2: Add close button to Sidebar for mobile**
+
+Update Sidebar to accept `onClose` prop and add a close button visible only on mobile:
+```tsx
+// At the top of the sidebar, inside the logo section:
+<button
+  onClick={onClose}
+  className="lg:hidden p-1 rounded hover:bg-[var(--plan-bg-hover)]"
+>
+  ✕
+</button>
+```
+
+- [ ] **Step 3: Verify responsive behavior**
+
+Run app, resize browser below `lg` breakpoint (1024px).
+Expected: Sidebar hidden, hamburger button visible, clicking it slides sidebar in as overlay.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add packages/app/src/components/layout/
+git commit -m "feat: responsive sidebar with mobile collapse and overlay"
+```
+
+---
+
+### Task 31: Plan content styles (rendered HTML)
+
+**Files:**
+- Create: `packages/app/src/styles/plan-content.css`
+- Modify: `packages/app/src/index.css`
+
+- [ ] **Step 1: Create plan-content.css**
+
+```css
+/* Plan content rendered HTML styles */
+.plan-content {
+  font-family: var(--plan-font-body);
+  font-size: var(--plan-font-size);
+  line-height: var(--plan-line-height);
+  color: var(--plan-text-primary);
+}
+
+.plan-content .plan-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--plan-text-heading);
+  margin-bottom: 0.5rem;
+}
+
+.plan-content .plan-section {
+  margin-bottom: var(--plan-section-gap);
+}
+
+.plan-content .plan-heading {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--plan-text-heading);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--plan-border-subtle);
+}
+
+.plan-content .plan-paragraph {
+  margin-bottom: var(--plan-paragraph-gap);
+}
+
+.plan-content .plan-code {
+  background: var(--plan-code-bg);
+  border: 1px solid var(--plan-border-subtle);
+  border-radius: 6px;
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: var(--plan-font-mono);
+  font-size: 0.85em;
+  margin-bottom: var(--plan-paragraph-gap);
+}
+
+.plan-content .plan-code code {
+  background: none;
+  padding: 0;
+  border: none;
+}
+
+.plan-content code {
+  background: var(--plan-code-bg);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+  font-family: var(--plan-font-mono);
+  font-size: 0.85em;
+}
+
+.plan-content .plan-list {
+  padding-left: 1.5rem;
+  margin-bottom: var(--plan-paragraph-gap);
+}
+
+.plan-content .plan-list li {
+  margin-bottom: 0.25rem;
+}
+
+.plan-content .plan-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--plan-paragraph-gap);
+  font-size: 0.9em;
+}
+
+.plan-content .plan-table th,
+.plan-content .plan-table td {
+  border: 1px solid var(--plan-border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.plan-content .plan-table th {
+  background: var(--plan-bg-secondary);
+  font-weight: 600;
+  color: var(--plan-text-heading);
+}
+
+.plan-content strong {
+  color: var(--plan-text-heading);
+  font-weight: 600;
+}
+
+.plan-content a {
+  color: var(--plan-accent);
+  text-decoration: none;
+}
+
+.plan-content a:hover {
+  text-decoration: underline;
+}
+
+.plan-content blockquote {
+  border-left: 3px solid var(--plan-border);
+  padding-left: 1rem;
+  color: var(--plan-text-secondary);
+  margin: 0 0 var(--plan-paragraph-gap);
+}
+
+/* Section-specific styles */
+.plan-section--summary {
+  background: var(--plan-bg-secondary);
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  border: 1px solid var(--plan-border-subtle);
+}
+
+.plan-section--summary .plan-heading {
+  border-bottom: none;
+}
+```
+
+- [ ] **Step 2: Import in index.css**
+
+Add to `packages/app/src/index.css`:
+```css
+@import "./styles/plan-content.css";
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add packages/app/src/styles/plan-content.css packages/app/src/index.css
+git commit -m "feat: plan content styles with semantic class support and dark mode"
+```
+
+---
+
+### Task 32: End-to-end smoke test
+
+**Files:**
+- Create: `packages/app/src/__tests__/smoke.test.tsx`
+
+- [ ] **Step 1: Write smoke test for key components**
+
+Create `packages/app/src/__tests__/smoke.test.tsx`:
+```tsx
+import { describe, it, expect } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { StatusBadge } from "../components/plans/StatusBadge";
+import { CommentComposer } from "../components/comments/CommentComposer";
+import { TimelineEntry } from "../components/timeline/TimelineEntry";
+
+describe("StatusBadge", () => {
+  it("renders correct label for each status", () => {
+    const { rerender } = render(<StatusBadge status="draft" />);
+    expect(screen.getByText("Draft")).toBeDefined();
+
+    rerender(<StatusBadge status="in_review" />);
+    expect(screen.getByText("In Review")).toBeDefined();
+
+    rerender(<StatusBadge status="approved" />);
+    expect(screen.getByText("Approved")).toBeDefined();
+
+    rerender(<StatusBadge status="rejected" />);
+    expect(screen.getByText("Changes Requested")).toBeDefined();
+  });
+});
+
+describe("CommentComposer", () => {
+  it("renders with placeholder text", () => {
+    render(
+      <CommentComposer
+        onSubmit={() => {}}
+        onCancel={() => {}}
+        placeholder="Test placeholder"
+      />
+    );
+    expect(screen.getByPlaceholderText("Test placeholder")).toBeDefined();
+  });
+
+  it("disables submit when empty", () => {
+    render(<CommentComposer onSubmit={() => {}} onCancel={() => {}} />);
+    const submitBtn = screen.getByText("Comment");
+    expect(submitBtn).toHaveAttribute("disabled");
+  });
+});
+
+describe("TimelineEntry", () => {
+  it("renders approval entry", () => {
+    render(
+      <TimelineEntry
+        type="approved"
+        authorName="Alex"
+        timestamp={Date.now()}
+      />
+    );
+    expect(screen.getByText("Alex")).toBeDefined();
+    expect(screen.getByText(/Approved/)).toBeDefined();
+  });
+
+  it("renders version push with version number", () => {
+    render(
+      <TimelineEntry
+        type="version_pushed"
+        authorName="Steve"
+        timestamp={Date.now()}
+        versionNumber={3}
+      />
+    );
+    expect(screen.getByText(/v3/)).toBeDefined();
+  });
+});
+```
+
+- [ ] **Step 2: Run all tests**
+
+Run: `pnpm test`
+Expected: All tests pass across all projects (convex, renderer, app, cli).
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add packages/app/src/__tests__/smoke.test.tsx
+git commit -m "test: smoke tests for StatusBadge, CommentComposer, TimelineEntry"
+```
+
+---
+
+### Task 33: Final verification and deploy
+
+- [ ] **Step 1: Run full test suite**
+
+Run: `pnpm test`
+Expected: All tests pass.
+
+- [ ] **Step 2: Build the app**
+
+Run: `pnpm --filter @planshare/app build`
+Expected: Vite build succeeds.
+
+- [ ] **Step 3: Push schema to Convex production**
+
+Run: `npx convex deploy`
+Expected: Schema and functions deployed.
+
+- [ ] **Step 4: Deploy to Vercel**
+
+Run: `vercel --prod`
+Expected: Deployment succeeds, live URL accessible.
+
+- [ ] **Step 5: Push all code to GitHub**
+
+```bash
+git push origin main
+```
+
+- [ ] **Step 6: Verify live app**
+
+Open the Vercel URL. Expected: Login page renders (Google OAuth if configured, or loading screen).
+
+- [ ] **Step 7: Final commit if any cleanup needed**
+
+```bash
+git add -A && git commit -m "chore: final Phase 1 cleanup" || echo "Nothing to commit"
+```
+
+---
+
+**Plan complete.** 33 tasks across 8 chunks covering:
+
+1. **Bootstrap** — monorepo, Vite app, CLI, renderer, Convex, Vitest, GitHub, Vercel
+2. **Renderer** — markdown → semantic HTML with paragraph IDs and section classes
+3. **Convex Backend** — schema, factories, folders, plans, versions, comments, reviews, invites, HTTP endpoints
+4. **Web App Auth & Shell** — Google OAuth, theme system, sidebar layout, routing
+5. **Folder & Plan Views** — plan cards, plan detail, version switcher
+6. **Comments & Reviews** — paragraph commenting, threaded replies, review timeline, approve/reject modal
+7. **CLI** — auth, API client, interactive push, folders/plans listing
+8. **Polish** — admin page, responsive layout, plan content styles, smoke tests, deploy
