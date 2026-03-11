@@ -16,21 +16,32 @@ type User = {
   role?: string;
 };
 
-export function Sidebar() {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+export function Sidebar({ onClose }: SidebarProps) {
   const folders = useQuery(api.folders.list, {}) as Folder[] | undefined;
   const me = useQuery(api.users.me, {}) as User | null | undefined;
   const { folderSlug } = useParams();
 
   return (
     <aside
-      className="w-[var(--sidebar-width)] bg-[var(--sidebar-bg)] border-r border-[var(--sidebar-border)] flex flex-col h-screen fixed left-0 top-0"
+      className="w-[var(--sidebar-width)] bg-[var(--sidebar-bg)] border-r border-[var(--sidebar-border)] flex flex-col h-screen"
     >
       {/* Logo */}
-      <div className="p-4 border-b border-[var(--sidebar-border)]">
+      <div className="p-4 border-b border-[var(--sidebar-border)] flex items-center justify-between">
         <Link to="/" className="text-[var(--plan-text-heading)] font-semibold text-lg flex items-center gap-2">
           <span className="bg-[var(--plan-accent)] text-white w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold">P</span>
           PlanShare
         </Link>
+        <button
+          onClick={onClose}
+          className="lg:hidden p-1 rounded hover:bg-[var(--plan-bg-hover)]"
+          aria-label="Close sidebar"
+        >
+          ✕
+        </button>
       </div>
 
       {/* Folders */}
@@ -51,6 +62,14 @@ export function Sidebar() {
             {folder.name}
           </Link>
         ))}
+        {me?.role === "admin" && (
+          <Link
+            to="/admin/users"
+            className="block px-3 py-2 mt-2 rounded-md text-sm text-[var(--plan-text-secondary)] hover:bg-[var(--plan-bg-hover)] border-t border-[var(--sidebar-border)] pt-3"
+          >
+            User Management
+          </Link>
+        )}
       </nav>
 
       {/* User + theme toggle */}

@@ -3,6 +3,7 @@ import { AuthGuard } from "./lib/auth";
 import { Shell } from "./components/layout/Shell";
 import { FolderView } from "./pages/FolderView";
 import { PlanView } from "./pages/PlanView";
+import { AdminUsers } from "./pages/AdminUsers";
 
 function HomePage() {
   return (
@@ -26,7 +27,7 @@ export default function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/f/:folderSlug" element={<FolderView />} />
             <Route path="/f/:folderSlug/:planSlug" element={<PlanView />} />
-            <Route path="/admin/users" element={<div>Admin (coming soon)</div>} />
+            <Route path="/admin/users" element={<AdminUsers />} />
           </Route>
         </Routes>
       </AuthGuard>
