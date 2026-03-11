@@ -30,7 +30,7 @@ Developers using Claude Code for planning sessions produce valuable artifacts �
 - Support a plan lifecycle: draft → in_review → approved/rejected
 - Version plans (push-based, each CLI push creates a new version)
 - Organize plans into folders that map to projects
-- Copy-to-clipboard for Linear (phase 1), direct Linear API integration (phase 2)
+- Copy-to-clipboard for Linear (phase 1: copies raw markdown which pastes cleanly into Linear's editor), direct Linear API integration (phase 2)
 - Google OAuth with invite-only access (admin invites users)
 - Responsive design with dark/light mode
 - Semantic HTML output with CSS custom properties for theming
@@ -74,16 +74,24 @@ plan-and-share/
 │   │   │   │   ├── AdminUsers.tsx
 │   │   │   │   └── Login.tsx
 │   │   │   ├── lib/
-│   │   │   │   ├── markdown.ts  MD → semantic HTML renderer
+│   │   │   │   ├── markdown.ts  Wraps @planshare/renderer for app use
 │   │   │   │   └── theme.ts    Dark/light mode, CSS vars
 │   │   │   └── App.tsx         Router + ConvexProvider + AuthGuard
 │   │   ├── public/
 │   │   └── vite.config.ts
 │   │
+│   ├── renderer/               ← Shared markdown → HTML renderer
+│   │   ├── src/
+│   │   │   ├── index.ts        remark/rehype pipeline
+│   │   │   ├── plugins/        Custom rehype plugins (paragraph IDs, semantic classes)
+│   │   │   └── mermaid.ts      Mermaid → SVG rendering
+│   │   ├── package.json        @planshare/renderer (internal)
+│   │   └── tsconfig.json
+│   │
 │   └── cli/                    ← Node.js CLI (npm publishable)
 │       ├── src/
 │       │   ├── commands/
-│       │   │   ├── login.ts    Google OAuth device flow
+│       │   │   ├── login.ts    Google OAuth localhost redirect flow
 │       │   │   ├── folders.ts  List folders
 │       │   │   ├── plans.ts    List plans in folder
 │       │   │   ├── push.ts     Interactive push (new or update)
@@ -91,8 +99,7 @@ plan-and-share/
 │       │   │   └── update.ts   Push new version
 │       │   ├── lib/
 │       │   │   ├── api.ts      Convex HTTP client
-│       │   │   ├── auth.ts     Token storage (~/.plan-push)
-│       │   │   └── render.ts   Shared MD → HTML (same as app)
+│       │   │   └── auth.ts     Token storage (~/.plan-push)
 │       │   └── index.ts        CLI entry point (commander)
 │       ├── package.json        publishable as @yourorg/plan-push
 │       └── tsconfig.json
@@ -150,6 +157,7 @@ Reviewer opens link in browser
 **users**
 | Field | Type | Notes |
 |-------|------|-------|
+| tokenIdentifier | string | Convex auth identity link |
 | email | string | Google account |
 | name | string | |
 | avatarUrl | string | |
@@ -173,8 +181,8 @@ Reviewer opens link in browser
 | folderId | Id\<folders\> | |
 | title | string | |
 | slug | string | |
-| status | "draft" \| "in_review" \| "approved" \| "rejected" \| "superseded" | |
-| currentVersionId | Id\<planVersions\> | |
+| status | "draft" \| "in_review" \| "approved" \| "rejected" | |
+| currentVersionId | Id\<planVersions\>? | Optional; set after first version is created |
 | createdBy | Id\<users\> | |
 | createdAt | number | |
 | updatedAt | number | |
@@ -200,6 +208,7 @@ Reviewer opens link in browser
 | body | string | |
 | authorId | Id\<users\> | |
 | resolved | boolean | |
+| resolvedInVersionId | Id\<planVersions\>? | Which version addressed this comment (for Phase 4) |
 | createdAt | number | |
 | updatedAt | number | |
 
@@ -241,6 +250,9 @@ draft → in_review → approved → (copy to Linear)
 - Author clicks "Request Review" → moves to "in_review"
 - Any member can approve or request changes (creates a review record)
 - Rejection + new version push auto-moves back to "in_review"
+- Status transitions are recorded in the `reviews` table (for approve/reject) and as timeline events. "Request Review" is a status change on the `plans` table — the `updatedAt` timestamp plus the status change to `in_review` serves as the audit trail.
+- Comment replies are single-depth only (no nested reply-to-reply). A reply belongs to a comment thread, not to another reply.
+- Plans and folders can be soft-deleted (add `deletedAt: number?` field). Deleting a folder soft-deletes all plans within it. Soft-deleted items are hidden from the UI but preserved in the database.
 
 ## UI Design
 
@@ -292,6 +304,10 @@ Every commentable block gets a stable ID derived from its heading ancestry and p
 - `technical-architecture-p1`, `technical-architecture-d1` (diagrams)
 
 These IDs are what comments attach to via `paragraphId`.
+
+### Cross-Version Comment Visibility
+
+When viewing the latest version of a plan, unresolved comments from prior versions are shown in a collapsed "Previous version comments" section below each paragraph where the heading-level anchor matches. If a paragraph was deleted or the section restructured, orphaned comments appear in a "Comments from earlier versions" section at the bottom of the plan. This avoids losing feedback while keeping the current version's reading experience clean.
 
 ### Semantic Class Names
 
@@ -423,9 +439,11 @@ plan-push update ./plan.md --plan auth-overhaul --note "Addressed v1 feedback"
 
 ### Auth
 
-- `plan-push login` opens a browser for Google OAuth
-- Token stored at `~/.plan-push/credentials.json`
+- `plan-push login` uses localhost redirect flow: CLI starts a temporary local HTTP server on a random port, opens the browser to Google OAuth consent screen, Google redirects back to `http://localhost:<port>/callback` with an auth code
+- CLI exchanges the Google auth code for a token, then calls a Convex HTTP endpoint (`/api/auth/exchange`) which validates the Google token, looks up the user by email in the `users` table (must match an invite), and returns a Convex session token
+- Session token stored at `~/.plan-push/credentials.json`
 - CLI reads Convex deployment URL from `.env.local` in project root, or `PLANSHARE_URL` env var
+- On token expiry, CLI automatically re-triggers the login flow
 
 ## Phased Delivery
 
@@ -453,6 +471,17 @@ plan-push update ./plan.md --plan auth-overhaul --note "Addressed v1 feedback"
 - "Send to Linear" button on approved plans
 - Team/project/status/assignee selection from Linear dropdowns
 - Created issues linked back to the plan
+
+### Content Size Limits
+
+Convex has a 1MB document size limit. The `markdownContent` and `htmlContent` fields stored together in `planVersions` could exceed this for very large plans with embedded diagrams. If a plan exceeds 500KB combined, the CLI should warn the user. For Phase 2+, consider storing content in Convex file storage instead of inline document fields. For Phase 1, the 1MB limit is unlikely to be hit for typical plans.
+
+### CLI Error Handling
+
+- **Convex unreachable:** CLI retries 3 times with exponential backoff, then shows a clear error with the endpoint URL for debugging
+- **Token expired:** CLI automatically re-triggers the login flow
+- **Malformed markdown:** CLI validates the markdown parses without errors before pushing. Warns on missing H1 (used as title fallback).
+- **No invite match:** If the Google account email doesn't match any invite, the Convex auth endpoint returns a clear "not invited" error
 
 ### Phase 4: Enhanced Commenting
 - Text-level highlighting (select arbitrary text to comment)
