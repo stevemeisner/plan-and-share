@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthGuard } from "./lib/auth";
 import { Shell } from "./components/layout/Shell";
+import { FolderView } from "./pages/FolderView";
+import { PlanView } from "./pages/PlanView";
 
 function HomePage() {
   return (
@@ -22,8 +24,8 @@ export default function App() {
         <Routes>
           <Route element={<Shell />}>
             <Route path="/" element={<HomePage />} />
-            <Route path="/f/:folderSlug" element={<div>Folder view (coming soon)</div>} />
-            <Route path="/f/:folderSlug/:planSlug" element={<div>Plan view (coming soon)</div>} />
+            <Route path="/f/:folderSlug" element={<FolderView />} />
+            <Route path="/f/:folderSlug/:planSlug" element={<PlanView />} />
             <Route path="/admin/users" element={<div>Admin (coming soon)</div>} />
           </Route>
         </Routes>
