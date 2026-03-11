@@ -2,15 +2,20 @@ import type { Root, Element } from "hast";
 import type { Plugin } from "unified";
 import GithubSlugger from "github-slugger";
 
+// Keys use github-slugger output for headings containing "&" (produces double hyphens)
 const SECTION_TYPE_MAP: Record<string, string> = {
   "executive-summary": "summary",
+  "background--context": "background",
   "background-context": "background",
+  "goals--non-goals": "goals",
   "goals-non-goals": "goals",
   "technical-architecture": "technical",
   "implementation-approach": "implementation",
   "test-coverage-plan": "testing",
+  "rollout--migration": "rollout",
   "rollout-migration": "rollout",
   "open-questions": "questions",
+  "risks--mitigations": "risks",
   "risks-mitigations": "risks",
 };
 

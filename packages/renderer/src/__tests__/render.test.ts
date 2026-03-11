@@ -65,6 +65,24 @@ const x = 1;
     expect(paragraphIds).toEqual([]);
   });
 
+  it("maps headings with ampersands to correct section types", async () => {
+    const md = `## Goals & Non-Goals
+
+Keep it simple.
+
+## Risks & Mitigations
+
+Watch out.
+`;
+    const { html, paragraphIds } = await renderMarkdown(md);
+
+    // github-slugger produces double hyphens for "&" — our map handles both forms
+    expect(html).toContain('plan-section--goals');
+    expect(html).toContain('plan-section--risks');
+    expect(paragraphIds).toContain("goals--non-goals-p1");
+    expect(paragraphIds).toContain("risks--mitigations-p1");
+  });
+
   it("handles markdown with no h2 sections", async () => {
     const md = "# Title\n\nJust a paragraph with no sections.";
     const { html, paragraphIds } = await renderMarkdown(md);
