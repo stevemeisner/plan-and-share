@@ -1,0 +1,116 @@
+.plan-content {
+  font-family: var(--plan-font-body);
+  font-size: var(--plan-font-size);
+  line-height: var(--plan-line-height);
+  color: var(--plan-text-primary);
+}
+
+.plan-content .plan-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--plan-text-heading);
+  margin-bottom: 0.5rem;
+}
+
+.plan-content .plan-section {
+  margin-bottom: var(--plan-section-gap);
+}
+
+.plan-content .plan-heading {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--plan-text-heading);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--plan-border-subtle);
+}
+
+.plan-content .plan-paragraph {
+  margin-bottom: var(--plan-paragraph-gap);
+}
+
+.plan-content .plan-code {
+  background: var(--plan-code-bg);
+  border: 1px solid var(--plan-border-subtle);
+  border-radius: 6px;
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: var(--plan-font-mono);
+  font-size: 0.85em;
+  margin-bottom: var(--plan-paragraph-gap);
+}
+
+.plan-content .plan-code code {
+  background: none;
+  padding: 0;
+  border: none;
+}
+
+.plan-content code {
+  background: var(--plan-code-bg);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+  font-family: var(--plan-font-mono);
+  font-size: 0.85em;
+}
+
+.plan-content .plan-list {
+  padding-left: 1.5rem;
+  margin-bottom: var(--plan-paragraph-gap);
+}
+
+.plan-content .plan-list li {
+  margin-bottom: 0.25rem;
+}
+
+.plan-content .plan-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--plan-paragraph-gap);
+  font-size: 0.9em;
+}
+
+.plan-content .plan-table th,
+.plan-content .plan-table td {
+  border: 1px solid var(--plan-border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.plan-content .plan-table th {
+  background: var(--plan-bg-secondary);
+  font-weight: 600;
+  color: var(--plan-text-heading);
+}
+
+.plan-content strong {
+  color: var(--plan-text-heading);
+  font-weight: 600;
+}
+
+.plan-content a {
+  color: var(--plan-accent);
+  text-decoration: none;
+}
+
+.plan-content a:hover {
+  text-decoration: underline;
+}
+
+.plan-content blockquote {
+  border-left: 3px solid var(--plan-border);
+  padding-left: 1rem;
+  color: var(--plan-text-secondary);
+  margin: 0 0 var(--plan-paragraph-gap);
+}
+
+.plan-section--summary {
+  background: var(--plan-bg-secondary);
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  border: 1px solid var(--plan-border-subtle);
+}
+
+.plan-section--summary .plan-heading {
+  border-bottom: none;
+}
