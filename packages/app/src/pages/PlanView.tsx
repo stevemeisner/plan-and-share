@@ -5,6 +5,7 @@ import { api } from "../../../../convex/_generated/api";
 import { StatusBadge } from "../components/plans/StatusBadge";
 import { VersionSwitcher } from "../components/plans/VersionSwitcher";
 import { PlanContent } from "../components/plans/PlanContent";
+import { ReviewTimeline } from "../components/timeline/ReviewTimeline";
 
 export function PlanView() {
   const { folderSlug, planSlug } = useParams();
@@ -114,6 +115,13 @@ export function PlanView() {
             {v._id === plan.currentVersionId ? " — current" : ""}
           </button>
         ))}
+        <div className="mt-6">
+          <ReviewTimeline
+            planId={plan._id}
+            planCreatedAt={(plan as any).createdAt}
+            planCreatedByName="Author"
+          />
+        </div>
       </div>
     </div>
   );
