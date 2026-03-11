@@ -165,7 +165,7 @@ After this sequence, you have:
 - All env vars configured in both Convex and Vercel
 - A live URL you can start building against
 
-Every subsequent step (adding schema, auth, UI) is just code → push → auto-deploy.
+Every subsequent step (adding schema, auth, UI) is just code → test/prove it works with code tests → push → auto-deploy.
 
 ## Architecture Overview
 
