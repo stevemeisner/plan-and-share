@@ -1,5 +1,101 @@
-import { defineSchema } from "convex/server";
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
+import { authTables } from "@convex-dev/auth/server";
 
 export default defineSchema({
-  // Tables will be added in subsequent tasks
+  ...authTables,
+
+  users: defineTable({
+    tokenIdentifier: v.string(),
+    email: v.string(),
+    name: v.string(),
+    avatarUrl: v.optional(v.string()),
+    role: v.union(v.literal("admin"), v.literal("member")),
+    invitedBy: v.optional(v.id("users")),
+    status: v.union(v.literal("active"), v.literal("deactivated")),
+    deletedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_email", ["email"])
+    .index("by_tokenIdentifier", ["tokenIdentifier"]),
+
+  folders: defineTable({
+    name: v.string(),
+    slug: v.string(),
+    description: v.optional(v.string()),
+    createdBy: v.id("users"),
+    deletedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_slug", ["slug"]),
+
+  plans: defineTable({
+    folderId: v.id("folders"),
+    title: v.string(),
+    slug: v.string(),
+    status: v.union(
+      v.literal("draft"),
+      v.literal("in_review"),
+      v.literal("approved"),
+      v.literal("rejected")
+    ),
+    currentVersionId: v.optional(v.id("planVersions")),
+    createdBy: v.id("users"),
+    deletedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_folder", ["folderId"])
+    .index("by_slug", ["slug"])
+    .index("by_status", ["status"]),
+
+  planVersions: defineTable({
+    planId: v.id("plans"),
+    version: v.number(),
+    markdownContent: v.string(),
+    htmlContent: v.string(),
+    summary: v.optional(v.string()),
+    pushedBy: v.id("users"),
+    pushedAt: v.number(),
+    changeNote: v.optional(v.string()),
+  }).index("by_plan", ["planId"]),
+
+  comments: defineTable({
+    planId: v.id("plans"),
+    versionId: v.id("planVersions"),
+    paragraphId: v.string(),
+    body: v.string(),
+    authorId: v.id("users"),
+    resolved: v.boolean(),
+    resolvedInVersionId: v.optional(v.id("planVersions")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_plan", ["planId"])
+    .index("by_version", ["versionId"])
+    .index("by_paragraph", ["versionId", "paragraphId"]),
+
+  commentReplies: defineTable({
+    commentId: v.id("comments"),
+    body: v.string(),
+    authorId: v.id("users"),
+    createdAt: v.number(),
+  }).index("by_comment", ["commentId"]),
+
+  reviews: defineTable({
+    planId: v.id("plans"),
+    versionId: v.id("planVersions"),
+    action: v.union(v.literal("approved"), v.literal("changes_requested")),
+    note: v.optional(v.string()),
+    authorId: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_plan", ["planId"])
+    .index("by_version", ["versionId"]),
+
+  invites: defineTable({
+    email: v.string(),
+    invitedBy: v.id("users"),
+    acceptedAt: v.optional(v.number()),
+    createdAt: v.number(),
+  }).index("by_email", ["email"]),
 });
