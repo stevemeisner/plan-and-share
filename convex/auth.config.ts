@@ -1,7 +1,10 @@
+// @ts-expect-error Convex server runtime provides process.env
+const siteUrl: string = process.env.CONVEX_SITE_URL;
+
 export default {
   providers: [
     {
-      domain: process.env.CONVEX_SITE_URL,
+      domain: siteUrl,
       applicationID: "convex",
     },
   ],
