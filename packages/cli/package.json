@@ -1,23 +1,39 @@
 {
   "name": "@planshare/cli",
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "CLI tool for pushing markdown plans to PlanShare",
   "type": "module",
   "bin": {
-    "plan-push": "./bin/plan-push.js"
+    "plan-push": "./dist/index.js"
+  },
+  "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "dev": "tsx src/index.ts",
-    "build": "tsc"
+    "build": "tsup",
+    "prepublishOnly": "tsup"
   },
   "dependencies": {
-    "@planshare/renderer": "workspace:*",
     "commander": "^13.0.0",
     "inquirer": "^12.0.0",
-    "open": "^10.1.0",
-    "tsx": "^4.19.0"
+    "open": "^10.1.0"
   },
   "devDependencies": {
+    "@planshare/renderer": "workspace:*",
     "@types/node": "^25.4.0",
+    "tsup": "^8.0.0",
+    "tsx": "^4.19.0",
     "typescript": "^5.7.0"
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stevemeisner/plan-and-share.git",
+    "directory": "packages/cli"
+  },
+  "license": "MIT"
 }

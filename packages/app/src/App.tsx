@@ -4,6 +4,7 @@ import { Shell } from "./components/layout/Shell";
 import { FolderView } from "./pages/FolderView";
 import { PlanView } from "./pages/PlanView";
 import { AdminUsers } from "./pages/AdminUsers";
+import { CliAuthPage } from "./pages/CliAuthPage";
 
 function HomePage() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
             <Route path="/f/:folderSlug" element={<FolderView />} />
             <Route path="/f/:folderSlug/:planSlug" element={<PlanView />} />
             <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/cli-auth" element={<CliAuthPage />} />
           </Route>
         </Routes>
       </AuthGuard>

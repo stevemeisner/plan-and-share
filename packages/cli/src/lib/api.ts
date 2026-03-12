@@ -24,9 +24,10 @@ export async function apiRequest(
     "Content-Type": "application/json",
   };
   if (token) {
+    // Token auth is authoritative — don't also send email header
     headers["Authorization"] = `Bearer ${token}`;
-  }
-  if (email) {
+  } else if (email) {
+    // Fallback for old configs without a token
     headers["X-User-Email"] = email;
   }
 

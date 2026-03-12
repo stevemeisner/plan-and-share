@@ -94,41 +94,30 @@ Tests use Vitest with dual environments: `edge-runtime` for Convex backend tests
 
 ## CLI: `plan-push`
 
-The CLI lets you push markdown plans to PlanShare from your terminal or CI pipeline. It talks to the PlanShare HTTP API — no auth token needed.
+The CLI lets you push markdown plans to PlanShare from your terminal or CI pipeline.
 
 ### Install
 
-**Option A: Shell alias (recommended)**
-
-Add to your `~/.zshrc` or `~/.bashrc`:
-
 ```bash
-alias plan-push="node /path/to/plan-and-share/packages/cli/bin/plan-push.js"
+# As a dev dependency (recommended for projects)
+pnpm add -D @planshare/cli
+npx plan-push login https://your-server.convex.site
+
+# Or globally
+pnpm add -g @planshare/cli
+plan-push login https://your-server.convex.site
 ```
 
-Then reload your shell (`source ~/.zshrc`). This works from any directory.
-
-**Option B: From the monorepo**
+### Authentication
 
 ```bash
-cd packages/cli
-pnpm install
-# Run directly with: node bin/plan-push.js <command>
+plan-push login                                    # interactive
+plan-push login https://your-server.convex.site    # direct
 ```
 
-> **Note:** `npm link` may not work if you use a shim manager like `mise` or `asdf`. The shell alias approach avoids this issue entirely.
+This opens your browser to PlanShare where you confirm a verification code. Once confirmed, the CLI stores an API token locally. No passwords or emails to type.
 
-### Setup
-
-```bash
-plan-push login
-```
-
-This prompts for the PlanShare server URL and verifies connectivity. The default points to the production server (`https://steady-warbler-171.convex.site`).
-
-Config is saved to `~/.plan-push/config.json`.
-
-**Important:** The URL must be the `.convex.site` domain (HTTP endpoints), not `.convex.cloud` (realtime client). For local development, this is `http://localhost:5173` only if you've configured Convex to proxy HTTP actions there.
+**Important:** The URL must be the `.convex.site` domain (HTTP endpoints), not `.convex.cloud` (realtime client).
 
 The CLI resolves the server URL in this order:
 1. `PLANSHARE_URL` environment variable
@@ -178,8 +167,9 @@ plan-push plans engineering
 
 | Problem | Fix |
 |---------|-----|
-| `mise ERROR No version is set for shim: plan-push` | Use the shell alias install method instead of `npm link` |
-| `ERR_MODULE_NOT_FOUND` | Make sure you're running via `node bin/plan-push.js`, not directly executing a `.ts` file |
+| Browser doesn't open during login | Copy the URL from the terminal and open manually |
+| "Session expired" during login | Run `plan-push login` again — sessions last 10 minutes |
+| Token stopped working | Token may have been revoked. Run `plan-push login` to get a new one |
 | `HTTP 500` on login | The server URL might be wrong — must be `.convex.site`, not `.convex.cloud` |
 | `Could not reach <url>/api/folders` | Check the URL and make sure Convex is deployed |
 
@@ -212,7 +202,8 @@ convex/
   schema.ts           → Database schema (users, folders, plans, versions, comments, reviews)
   auth.ts             → Google OAuth provider config
   auth.config.ts      → Convex auth domain config
-  http.ts             → HTTP endpoints for CLI (/api/folders, /api/plans, /api/push)
+  http.ts             → HTTP endpoints for CLI (/api/folders, /api/plans, /api/push, /api/cli-auth/*)
+  cliAuth.ts          → CLI device-code auth flow + API token management
   folders.ts          → Folder queries/mutations
   plans.ts            → Plan CRUD + status transitions
   planVersions.ts     → Version management (auto-increment, status reset)
@@ -223,10 +214,10 @@ convex/
 
 packages/app/src/
   main.tsx            → ConvexAuthProvider entry point
-  App.tsx             → Routes: /, /f/:folder, /f/:folder/:plan, /admin/users
+  App.tsx             → Routes: /, /f/:folder, /f/:folder/:plan, /admin/users, /cli-auth
   lib/auth.tsx        → AuthGuard + Google sign-in
   lib/theme.ts        → Dark/light theme (localStorage + prefers-color-scheme)
-  pages/              → FolderView, PlanView, AdminUsers
+  pages/              → FolderView, PlanView, AdminUsers, CliAuthPage
   components/         → Shell, Sidebar, PlanContent, Comments, Timeline, etc.
   styles/             → CSS custom properties (theme.css, plan-content.css)
 
@@ -283,6 +274,9 @@ npx convex env set AUTH_GOOGLE_SECRET "your-google-client-secret"
 # Must be your .convex.site domain (not .convex.cloud)
 npx convex env set SITE_URL "https://your-deployment.convex.site"
 
+# Required for CLI browser auth (your Vercel URL)
+npx convex env set WEB_APP_URL "https://your-app.vercel.app"
+
 # Generate auth signing keys
 npx @convex-dev/auth
 
@@ -310,22 +304,21 @@ Set the same environment variables on your prod deployment:
 npx convex env set AUTH_GOOGLE_ID "..." --prod
 npx convex env set AUTH_GOOGLE_SECRET "..." --prod
 npx convex env set SITE_URL "https://your-prod-deployment.convex.site" --prod
+npx convex env set WEB_APP_URL "https://your-app.vercel.app" --prod
 npx convex env set ALLOWED_EMAIL_DOMAINS "yourcompany.com" --prod
 npx @convex-dev/auth --prod
 ```
 
 ### 7. Set Up the CLI for Your Team
 
-Each team member installs the CLI and points it at your server:
+Each team member installs the CLI and authenticates:
 
 ```bash
-# Add to ~/.zshrc or ~/.bashrc
-alias plan-push="node /path/to/plan-and-share/packages/cli/bin/plan-push.js"
-
-# Connect to your instance
-plan-push login
-# Enter your .convex.site URL when prompted
+pnpm add -D @planshare/cli
+npx plan-push login https://your-deployment.convex.site
 ```
+
+This opens a browser window where they sign in with Google and confirm a verification code. The CLI stores an API token locally.
 
 ### Keeping Dev and Prod in Sync
 

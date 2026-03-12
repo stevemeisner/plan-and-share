@@ -1,45 +1,48 @@
-import { storeConfig, getConvexUrl, getStoredEmail } from "../lib/auth.js";
+import { storeConfig, storeToken, getConvexUrl } from "../lib/auth.js";
+import open from "open";
 
 const DEFAULT_PROD_URL = "https://steady-warbler-171.convex.site";
 
-export async function loginCommand() {
-  const inquirer = await import("inquirer");
+function generateSessionSecret(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
 
-  let currentUrl: string | null = null;
-  try {
-    currentUrl = getConvexUrl();
-  } catch {}
+function generateCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => chars[b % chars.length]).join("");
+}
 
-  const currentEmail = getStoredEmail();
+export async function loginCommand(url?: string) {
+  // Resolve server URL
+  if (!url) {
+    let currentUrl: string | null = null;
+    try {
+      currentUrl = getConvexUrl();
+    } catch {}
 
-  const { url } = await inquirer.default.prompt([
-    {
-      type: "input",
-      name: "url",
-      message: "PlanShare server URL:",
-      default: currentUrl ?? DEFAULT_PROD_URL,
-    },
-  ]);
-
-  const { email } = await inquirer.default.prompt([
-    {
-      type: "input",
-      name: "email",
-      message: "Your email (for attributing pushes):",
-      default: currentEmail ?? undefined,
-      validate: (input: string) =>
-        input.includes("@") ? true : "Please enter a valid email address",
-    },
-  ]);
+    const inquirer = await import("inquirer");
+    const answer = await inquirer.default.prompt([
+      {
+        type: "input",
+        name: "url",
+        message: "PlanShare server URL:",
+        default: currentUrl ?? DEFAULT_PROD_URL,
+      },
+    ]);
+    url = answer.url;
+  }
 
   // Verify connectivity
   process.stdout.write("Verifying connection... ");
   try {
     const response = await fetch(new URL("/api/folders", url).toString());
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     await response.json();
+    console.log("OK");
   } catch (e: any) {
     console.log("FAILED");
     console.error(`\nCould not reach ${url}/api/folders`);
@@ -47,9 +50,92 @@ export async function loginCommand() {
     process.exit(1);
   }
 
-  storeConfig({ convexUrl: url, email });
-  console.log("OK");
-  console.log(`\n✓ Connected to ${url}`);
-  console.log(`  Pushes will be attributed to ${email}`);
-  console.log(`  Config saved to ~/.plan-push/config.json\n`);
+  // Fetch web app URL for browser auth
+  let webAppUrl: string;
+  try {
+    const configResp = await fetch(new URL("/api/config", url).toString());
+    const config = await configResp.json();
+    webAppUrl = config.webAppUrl;
+    if (!webAppUrl) {
+      console.error(
+        "\nServer does not have WEB_APP_URL configured. Ask your admin to set it."
+      );
+      process.exit(1);
+    }
+  } catch (e: any) {
+    console.error(`\nCould not fetch server config: ${e.message}`);
+    process.exit(1);
+  }
+
+  // Generate device code and session secret
+  const code = generateCode();
+  const sessionSecret = generateSessionSecret();
+
+  // Start auth session on server
+  try {
+    const startResp = await fetch(
+      new URL("/api/cli-auth/start", url).toString(),
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, sessionSecret }),
+      }
+    );
+    if (!startResp.ok) {
+      const err = await startResp.text();
+      throw new Error(err);
+    }
+  } catch (e: any) {
+    console.error(`\nFailed to start auth session: ${e.message}`);
+    process.exit(1);
+  }
+
+  // Open browser
+  const authUrl = `${webAppUrl}/cli-auth?code=${code}`;
+  console.log(`\nOpening browser for authentication...`);
+  console.log(`If the browser doesn't open, visit: ${authUrl}\n`);
+  console.log(`Verify this code in your browser: ${code}\n`);
+  console.log(`Waiting for authorization...`);
+
+  try {
+    await open(authUrl);
+  } catch {
+    // Browser failed to open — user can copy URL manually
+  }
+
+  // Poll for completion
+  const pollUrl = new URL("/api/cli-auth/poll", url);
+  pollUrl.searchParams.set("sessionSecret", sessionSecret);
+  const pollInterval = 2000;
+  const maxWait = 5 * 60 * 1000; // 5 minutes
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < maxWait) {
+    await new Promise((resolve) => setTimeout(resolve, pollInterval));
+
+    try {
+      const resp = await fetch(pollUrl.toString());
+      const result = await resp.json();
+
+      if (result.status === "completed") {
+        storeToken(result.token);
+        storeConfig({ convexUrl: url!, email: result.userEmail });
+        console.log(`\n✓ Authenticated as ${result.userEmail}`);
+        console.log(`  Config saved to ~/.plan-push/\n`);
+        return;
+      }
+
+      if (result.status === "expired") {
+        console.error("\nSession expired. Please run `plan-push login` again.");
+        process.exit(1);
+      }
+    } catch {
+      // Network error — keep polling
+    }
+  }
+
+  console.error(
+    "\nTimed out waiting for authorization. Please run `plan-push login` again."
+  );
+  process.exit(1);
 }

@@ -98,4 +98,32 @@ export default defineSchema({
     acceptedAt: v.optional(v.number()),
     createdAt: v.number(),
   }).index("by_email", ["email"]),
+
+  cliAuthSessions: defineTable({
+    code: v.string(),
+    sessionSecret: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("completed"),
+      v.literal("expired")
+    ),
+    token: v.optional(v.string()),
+    userEmail: v.optional(v.string()),
+    createdAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_code", ["code"])
+    .index("by_sessionSecret", ["sessionSecret"]),
+
+  apiTokens: defineTable({
+    userId: v.id("users"),
+    tokenHash: v.string(),
+    tokenPrefix: v.string(),
+    name: v.optional(v.string()),
+    lastUsedAt: v.optional(v.number()),
+    createdAt: v.number(),
+    revokedAt: v.optional(v.number()),
+  })
+    .index("by_tokenHash", ["tokenHash"])
+    .index("by_userId", ["userId"]),
 });

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { Command } from "commander";
 import { loginCommand } from "./commands/login.js";
 import { foldersCommand } from "./commands/folders.js";
@@ -13,7 +12,7 @@ program
   .version("0.1.0");
 
 program
-  .command("login")
+  .command("login [url]")
   .description("Sign in to PlanShare")
   .action(loginCommand);
 
