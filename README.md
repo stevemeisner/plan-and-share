@@ -1,8 +1,8 @@
 # PlanShare
 
-Publish, review, and approve technical plans. Write plans in markdown, push them with the CLI, review and comment in the web app.
+Open-source tool for publishing, reviewing, and approving technical plans. Write plans in markdown, push them with the CLI, and your team reviews in the web app — inline comments, approve/request changes, version tracking.
 
-**Live:** [plan-and-share-app.vercel.app](https://plan-and-share-app.vercel.app)
+Each org deploys their own instance: a Convex backend and a static Vite app you can host anywhere. Restrict access to your email domain with `ALLOWED_EMAIL_DOMAINS`.
 
 ## How It Works
 
@@ -231,9 +231,9 @@ packages/cli/src/
   lib/                → auth (token storage), api (HTTP client with retry)
 ```
 
-## Self-Hosting
+## Deployment
 
-Deploy your own PlanShare instance with Convex + Vercel + Google OAuth.
+Deploy your own PlanShare instance with a Convex backend and any static host for the frontend.
 
 ### 1. Fork & Clone
 
@@ -274,8 +274,8 @@ npx convex env set AUTH_GOOGLE_SECRET "your-google-client-secret"
 # Must be your .convex.site domain (not .convex.cloud)
 npx convex env set SITE_URL "https://your-deployment.convex.site"
 
-# Required for CLI browser auth (your Vercel URL)
-npx convex env set WEB_APP_URL "https://your-app.vercel.app"
+# Required for CLI browser auth (wherever you host the frontend)
+npx convex env set WEB_APP_URL "https://your-app.example.com"
 
 # Generate auth signing keys
 npx @convex-dev/auth
@@ -285,12 +285,18 @@ npx convex env set ALLOWED_EMAIL_DOMAINS "yourcompany.com"
 # Multiple domains: "company.com,partner.com"
 ```
 
-### 5. Deploy Frontend to Vercel
+### 5. Deploy the Frontend
 
-1. Import the repo in [Vercel](https://vercel.com)
-2. Set root directory to `packages/app`
-3. Add environment variable: `VITE_CONVEX_URL` = `https://your-deployment.convex.cloud`
-4. Deploy
+The frontend is a static Vite app (`packages/app`). Host it anywhere — Vercel, Netlify, Cloudflare Pages, or any static host.
+
+Build it with:
+
+```bash
+cd packages/app
+VITE_CONVEX_URL=https://your-deployment.convex.cloud pnpm build
+```
+
+The `dist/` output is a static site. Set `VITE_CONVEX_URL` as a build-time environment variable pointing to your Convex deployment's `.convex.cloud` URL.
 
 ### 6. Deploy Convex to Production
 
@@ -304,7 +310,7 @@ Set the same environment variables on your prod deployment:
 npx convex env set AUTH_GOOGLE_ID "..." --prod
 npx convex env set AUTH_GOOGLE_SECRET "..." --prod
 npx convex env set SITE_URL "https://your-prod-deployment.convex.site" --prod
-npx convex env set WEB_APP_URL "https://your-app.vercel.app" --prod
+npx convex env set WEB_APP_URL "https://your-app.example.com" --prod
 npx convex env set ALLOWED_EMAIL_DOMAINS "yourcompany.com" --prod
 npx @convex-dev/auth --prod
 ```
@@ -327,5 +333,5 @@ Always deploy to both environments when pushing Convex function changes:
 ```bash
 npx convex deploy -y --typecheck=disable   # prod
 npx convex dev --once                       # dev
-git push origin main                        # triggers Vercel
+git push origin main                        # triggers frontend redeploy (if using CI)
 ```

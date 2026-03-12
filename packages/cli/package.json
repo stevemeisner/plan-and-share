@@ -6,7 +6,12 @@
   "bin": {
     "plan-push": "./dist/index.js"
   },
-  "files": ["dist"],
+  "files": ["dist", "README.md"],
+  "keywords": ["planshare", "markdown", "plans", "cli", "technical-plans", "code-review"],
+  "homepage": "https://github.com/stevemeisner/plan-and-share#cli-plan-push",
+  "bugs": {
+    "url": "https://github.com/stevemeisner/plan-and-share/issues"
+  },
   "publishConfig": {
     "access": "public"
   },
