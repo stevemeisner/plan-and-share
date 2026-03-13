@@ -16,6 +16,37 @@ function generateCode(): string {
   return Array.from(bytes, (b) => chars[b % chars.length]).join("");
 }
 
+async function resolveApiUrl(inputUrl: string): Promise<string> {
+  // If it's already a .convex.site URL, use it directly
+  if (inputUrl.includes(".convex.site")) {
+    return inputUrl;
+  }
+
+  // Otherwise, try to discover the API URL from the frontend
+  process.stdout.write("Discovering API endpoint... ");
+  try {
+    const discoveryUrl = new URL("/planshare.json", inputUrl).toString();
+    const resp = await fetch(discoveryUrl);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const config = await resp.json();
+    if (config.apiUrl) {
+      console.log("OK");
+      return config.apiUrl;
+    }
+  } catch {
+    // Discovery failed
+  }
+
+  console.log("FAILED");
+  console.error(
+    `\nCould not discover API URL from ${inputUrl}/planshare.json`
+  );
+  console.error(
+    "Please provide the Convex .site URL directly, or ensure the frontend is deployed with VITE_CONVEX_URL set.\n"
+  );
+  process.exit(1);
+}
+
 export async function loginCommand(url?: string) {
   // Resolve server URL
   if (!url) {
@@ -29,23 +60,26 @@ export async function loginCommand(url?: string) {
       {
         type: "input",
         name: "url",
-        message: "PlanShare server URL:",
+        message: "PlanShare URL (frontend or .convex.site):",
         default: currentUrl ?? DEFAULT_PROD_URL,
       },
     ]);
     url = answer.url;
   }
 
+  // Resolve to API URL if a frontend URL was given
+  const apiUrl = await resolveApiUrl(url!);
+
   // Verify connectivity
   process.stdout.write("Verifying connection... ");
   try {
-    const response = await fetch(new URL("/api/folders", url).toString());
+    const response = await fetch(new URL("/api/folders", apiUrl).toString());
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     await response.json();
     console.log("OK");
   } catch (e: any) {
     console.log("FAILED");
-    console.error(`\nCould not reach ${url}/api/folders`);
+    console.error(`\nCould not reach ${apiUrl}/api/folders`);
     console.error(`Error: ${e.message}\n`);
     process.exit(1);
   }
@@ -53,7 +87,7 @@ export async function loginCommand(url?: string) {
   // Fetch web app URL for browser auth
   let webAppUrl: string;
   try {
-    const configResp = await fetch(new URL("/api/config", url).toString());
+    const configResp = await fetch(new URL("/api/config", apiUrl).toString());
     const config = await configResp.json();
     webAppUrl = config.webAppUrl;
     if (!webAppUrl) {
@@ -74,7 +108,7 @@ export async function loginCommand(url?: string) {
   // Start auth session on server
   try {
     const startResp = await fetch(
-      new URL("/api/cli-auth/start", url).toString(),
+      new URL("/api/cli-auth/start", apiUrl).toString(),
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -104,7 +138,7 @@ export async function loginCommand(url?: string) {
   }
 
   // Poll for completion
-  const pollUrl = new URL("/api/cli-auth/poll", url);
+  const pollUrl = new URL("/api/cli-auth/poll", apiUrl);
   pollUrl.searchParams.set("sessionSecret", sessionSecret);
   const pollInterval = 2000;
   const maxWait = 5 * 60 * 1000; // 5 minutes
@@ -119,7 +153,7 @@ export async function loginCommand(url?: string) {
 
       if (result.status === "completed") {
         storeToken(result.token);
-        storeConfig({ convexUrl: url!, email: result.userEmail });
+        storeConfig({ convexUrl: apiUrl, email: result.userEmail });
         console.log(`\n✓ Authenticated as ${result.userEmail}`);
         console.log(`  Config saved to ~/.plan-push/\n`);
         return;

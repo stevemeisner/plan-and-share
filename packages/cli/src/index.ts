@@ -1,15 +1,19 @@
+import { createRequire } from "module";
 import { Command } from "commander";
 import { loginCommand } from "./commands/login.js";
 import { foldersCommand } from "./commands/folders.js";
 import { plansCommand } from "./commands/plans.js";
 import { pushCommand } from "./commands/push.js";
 
+const require = createRequire(import.meta.url);
+const pkg = require("../package.json");
+
 const program = new Command();
 
 program
   .name("plan-push")
   .description("Publish plans to PlanShare")
-  .version("0.1.0");
+  .version(pkg.version);
 
 program
   .command("login [url]")
