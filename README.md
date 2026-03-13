@@ -99,13 +99,11 @@ The CLI lets you push markdown plans to PlanShare from your terminal or CI pipel
 ### Install
 
 ```bash
-# As a dev dependency (recommended for projects)
-pnpm add -D @planshare/cli
-npx plan-push login https://your-server.convex.site
+# Global install (recommended — works across all your projects)
+npm install -g @planshare/cli
 
-# Or globally
-pnpm add -g @planshare/cli
-plan-push login https://your-server.convex.site
+# Or as a per-project dev dependency (useful for CI)
+npm install -D @planshare/cli
 ```
 
 ### Authentication
@@ -320,8 +318,8 @@ npx @convex-dev/auth --prod
 Each team member installs the CLI and authenticates:
 
 ```bash
-pnpm add -D @planshare/cli
-npx plan-push login https://your-deployment.convex.site
+npm install -g @planshare/cli
+plan-push login https://your-deployment.convex.site
 ```
 
 This opens a browser window where they sign in with Google and confirm a verification code. The CLI stores an API token locally.

@@ -7,16 +7,11 @@ Each org deploys their own PlanShare instance — a Convex backend and a static 
 ## Install
 
 ```bash
-# As a dev dependency (recommended)
-pnpm add -D @planshare/cli
+# Global install (recommended — works across all your projects)
+npm install -g @planshare/cli
+plan-push --help
 
-# Or globally
-pnpm add -g @planshare/cli
-```
-
-Also works with npm or yarn:
-
-```bash
+# Or as a per-project dev dependency (useful for CI)
 npm install -D @planshare/cli
 npx plan-push --help
 ```
