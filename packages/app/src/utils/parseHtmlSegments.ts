@@ -17,12 +17,16 @@ export type ParseResult = {
 export function parseHtmlSegments(htmlContent: string): ParseResult {
   const parser = new DOMParser();
   const doc = parser.parseFromString(htmlContent, "text/html");
-  const body = doc.body;
+
+  // The renderer wraps output in <article class="plan-content">, so look
+  // inside the article for sections. Fall back to body if no article found.
+  const article = doc.querySelector("article.plan-content");
+  const container = article ?? doc.body;
 
   let preamble = "";
   const sections: ContentSection[] = [];
 
-  for (const node of Array.from(body.children)) {
+  for (const node of Array.from(container.children)) {
     // Top-level h1 goes into preamble (hidden by CSS anyway)
     if (node.tagName === "H1") {
       preamble += (node as HTMLElement).outerHTML;
