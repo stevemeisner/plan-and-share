@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useRef } from "react";
-import { useQuery } from "convex/react";
-import { api } from "../../../../../convex/_generated/api";
 import { CommentAnchor } from "../comments/CommentAnchor";
 import { parseHtmlSegments } from "../../utils/parseHtmlSegments";
 import mermaid from "mermaid";
@@ -18,14 +16,27 @@ interface PlanContentProps {
   htmlContent: string;
   planId?: string;
   versionId?: string;
+  comments?: Array<{
+    _id: string;
+    paragraphId: string;
+    body: string;
+    authorId: string;
+    resolved: boolean;
+    createdAt: number;
+  }>;
+  onSelectParagraph?: (id: string) => void;
+  activeParagraphId?: string | null;
 }
 
-export function PlanContent({ htmlContent, planId, versionId }: PlanContentProps) {
+export function PlanContent({
+  htmlContent,
+  planId,
+  versionId,
+  comments = [],
+  onSelectParagraph,
+  activeParagraphId,
+}: PlanContentProps) {
   const contentRef = useRef<HTMLDivElement>(null);
-  const comments = useQuery(
-    api.comments.listByVersion,
-    versionId ? { versionId: versionId as any } : "skip"
-  ) ?? [];
 
   const parsed = useMemo(() => parseHtmlSegments(htmlContent), [htmlContent]);
 
@@ -74,13 +85,13 @@ export function PlanContent({ htmlContent, planId, versionId }: PlanContentProps
               <div dangerouslySetInnerHTML={{ __html: section.headingHtml }} />
             )}
             {section.segments.map((seg) =>
-              seg.type === "commentable" && planId && versionId ? (
+              seg.type === "commentable" && planId && versionId && onSelectParagraph ? (
                 <CommentAnchor
                   key={seg.paragraphId}
                   paragraphId={seg.paragraphId}
-                  planId={planId}
-                  versionId={versionId}
                   comments={comments as any}
+                  onSelectParagraph={onSelectParagraph}
+                  isActive={activeParagraphId === seg.paragraphId}
                 >
                   <div dangerouslySetInnerHTML={{ __html: seg.html }} />
                 </CommentAnchor>

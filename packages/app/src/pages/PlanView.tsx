@@ -8,6 +8,7 @@ import { PlanContent } from "../components/plans/PlanContent";
 import { ReviewTimeline } from "../components/timeline/ReviewTimeline";
 import { ReviewModal } from "../components/plans/ReviewModal";
 import { ReviewRequestModal } from "../components/plans/ReviewRequestModal";
+import { CommentPanel } from "../components/comments/CommentPanel";
 
 function useToast() {
   const [message, setMessage] = useState<string | null>(null);
@@ -32,11 +33,17 @@ export function PlanView() {
   const [reviewAction, setReviewAction] = useState<"approved" | "changes_requested" | null>(null);
   const [showReviewRequest, setShowReviewRequest] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [activeParagraphId, setActiveParagraphId] = useState<string | null>(null);
   const toast = useToast();
 
   const currentVersion = versions?.find(
     (v) => v._id === (selectedVersionId ?? plan?.currentVersionId)
   );
+
+  const comments = useQuery(
+    api.comments.listByVersion,
+    currentVersion ? { versionId: currentVersion._id as any } : "skip"
+  ) ?? [];
 
   const updateStatus = useMutation(api.plans.updateStatus);
   const submitReview = useMutation(api.reviews.submit);
@@ -58,7 +65,7 @@ export function PlanView() {
         <div className="flex items-center justify-between mb-6 pb-4 border-b border-[var(--plan-border-subtle)]">
           <Link
             to={`/f/${folderSlug}`}
-            className="text-xs text-[var(--plan-accent)] hover:underline"
+            className="inline-flex items-center gap-1 text-sm text-[var(--plan-text-secondary)] hover:text-[var(--plan-text-heading)] hover:bg-[var(--plan-bg-hover)] px-2 py-1 rounded-md transition-colors"
           >
             ← Back
           </Link>
@@ -108,66 +115,85 @@ export function PlanView() {
               v{currentVersion.version} · {new Date(currentVersion.pushedAt).toLocaleDateString()}
               {currentVersion.changeNote && ` · ${currentVersion.changeNote}`}
             </p>
-            <PlanContent htmlContent={currentVersion.htmlContent} planId={plan._id} versionId={currentVersion._id} />
+            <PlanContent
+              htmlContent={currentVersion.htmlContent}
+              planId={plan._id}
+              versionId={currentVersion._id}
+              comments={comments as any}
+              onSelectParagraph={setActiveParagraphId}
+              activeParagraphId={activeParagraphId}
+            />
           </>
         )}
       </div>
 
-      {/* Right sidebar */}
-      <div className="w-56 border-l border-[var(--plan-border-subtle)] bg-[var(--plan-bg-secondary)] p-4 hidden lg:block">
-        <div className="text-xs text-[var(--plan-text-muted)] uppercase tracking-wider mb-2">
-          Versions
-        </div>
-        {versions?.sort((a, b) => b.version - a.version).map((v) => (
-          <button
-            key={v._id}
-            onClick={() => setSelectedVersionId(v._id)}
-            className={`block w-full text-left text-sm px-2 py-1 rounded ${
-              v._id === (selectedVersionId ?? plan.currentVersionId)
-                ? "text-[var(--plan-accent)]"
-                : "text-[var(--plan-text-muted)] hover:text-[var(--plan-text-primary)]"
-            }`}
-          >
-            v{v.version}
-            {v._id === plan.currentVersionId ? " — current" : ""}
-          </button>
-        ))}
-        <div className="mt-6">
-          <ReviewTimeline
+      {/* Right sidebar: comment panel or versions/timeline */}
+      {activeParagraphId && currentVersion ? (
+        <div className="hidden lg:block">
+          <CommentPanel
             planId={plan._id}
-            planCreatedAt={(plan as any).createdAt}
-            planCreatedByName={creatorName}
-            reviewRequestedAt={(plan as any).reviewRequestedAt}
-            reviewRequestedBy={(plan as any).reviewRequestedBy}
-            requestedReviewers={(plan as any).requestedReviewers}
+            versionId={currentVersion._id}
+            paragraphId={activeParagraphId}
+            comments={comments as any}
+            onClose={() => setActiveParagraphId(null)}
           />
         </div>
-        <div className="mt-4 pt-4 border-t border-[var(--plan-border-subtle)]">
+      ) : (
+        <div className="w-56 border-l border-[var(--plan-border-subtle)] bg-[var(--plan-bg-secondary)] p-4 hidden lg:block">
           <div className="text-xs text-[var(--plan-text-muted)] uppercase tracking-wider mb-2">
-            Actions
+            Versions
           </div>
-          <button
-            onClick={async () => {
-              if (currentVersion) {
-                await navigator.clipboard.writeText((currentVersion as any).markdownContent);
-                toast.show("Copied markdown!");
-              }
-            }}
-            className="w-full text-left px-2 py-2 text-sm text-[var(--plan-text-primary)] bg-[var(--plan-bg)] border border-[var(--plan-border)] rounded-md hover:bg-[var(--plan-bg-hover)] transition-colors cursor-pointer"
-          >
-            Copy for Linear
-          </button>
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(window.location.href);
-              toast.show("Link copied!");
-            }}
-            className="w-full text-left px-2 py-2 mt-2 text-sm text-[var(--plan-text-primary)] bg-[var(--plan-bg)] border border-[var(--plan-border)] rounded-md hover:bg-[var(--plan-bg-hover)] transition-colors cursor-pointer"
-          >
-            Copy Link
-          </button>
+          {versions?.sort((a, b) => b.version - a.version).map((v) => (
+            <button
+              key={v._id}
+              onClick={() => setSelectedVersionId(v._id)}
+              className={`block w-full text-left text-sm px-2 py-1 rounded ${
+                v._id === (selectedVersionId ?? plan.currentVersionId)
+                  ? "text-[var(--plan-accent)]"
+                  : "text-[var(--plan-text-muted)] hover:text-[var(--plan-text-primary)]"
+              }`}
+            >
+              v{v.version}
+              {v._id === plan.currentVersionId ? " — current" : ""}
+            </button>
+          ))}
+          <div className="mt-6">
+            <ReviewTimeline
+              planId={plan._id}
+              planCreatedAt={(plan as any).createdAt}
+              planCreatedByName={creatorName}
+              reviewRequestedAt={(plan as any).reviewRequestedAt}
+              reviewRequestedBy={(plan as any).reviewRequestedBy}
+              requestedReviewers={(plan as any).requestedReviewers}
+            />
+          </div>
+          <div className="mt-4 pt-4 border-t border-[var(--plan-border-subtle)]">
+            <div className="text-xs text-[var(--plan-text-muted)] uppercase tracking-wider mb-2">
+              Actions
+            </div>
+            <button
+              onClick={async () => {
+                if (currentVersion) {
+                  await navigator.clipboard.writeText((currentVersion as any).markdownContent);
+                  toast.show("Copied markdown!");
+                }
+              }}
+              className="w-full text-left px-2 py-2 text-sm text-[var(--plan-text-primary)] bg-[var(--plan-bg)] border border-[var(--plan-border)] rounded-md hover:bg-[var(--plan-bg-hover)] transition-colors cursor-pointer"
+            >
+              Copy for Linear
+            </button>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                toast.show("Link copied!");
+              }}
+              className="w-full text-left px-2 py-2 mt-2 text-sm text-[var(--plan-text-primary)] bg-[var(--plan-bg)] border border-[var(--plan-border)] rounded-md hover:bg-[var(--plan-bg-hover)] transition-colors cursor-pointer"
+            >
+              Copy Link
+            </button>
+          </div>
         </div>
-      </div>
+      )}
       {/* Toast notification */}
       {toast.message && (
         <div className="fixed bottom-6 right-6 z-50 bg-[var(--plan-text-heading)] text-[var(--plan-bg)] px-4 py-2 rounded-lg text-sm shadow-lg animate-fade-in">

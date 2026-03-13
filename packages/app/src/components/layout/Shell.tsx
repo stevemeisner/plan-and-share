@@ -1,9 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 
 export function Shell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    return localStorage.getItem("sidebar-collapsed") === "true";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("sidebar-collapsed", String(collapsed));
+  }, [collapsed]);
 
   return (
     <div className="flex min-h-screen">
@@ -15,11 +22,15 @@ export function Shell() {
       )}
 
       <div
-        className={`fixed z-50 lg:sticky lg:top-0 lg:h-screen lg:block shrink-0 transition-transform duration-200 ${
+        className={`fixed z-50 lg:sticky lg:top-0 lg:h-screen lg:block shrink-0 transition-all duration-200 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        <Sidebar onClose={() => setSidebarOpen(false)} />
+        <Sidebar
+          onClose={() => setSidebarOpen(false)}
+          collapsed={collapsed}
+          onToggleCollapse={() => setCollapsed((c) => !c)}
+        />
       </div>
 
       <main className="flex-1 min-w-0">

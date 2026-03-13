@@ -27,6 +27,7 @@
   /* Comments */
   --plan-comment-bg: #f6f8fa;
   --plan-comment-highlight: rgba(9, 105, 218, 0.08);
+  --plan-comment-hover: rgba(9, 105, 218, 0.04);
   --plan-comment-border: #0969da;
 
   /* Code */
@@ -74,6 +75,7 @@
 
   --plan-comment-bg: #161b22;
   --plan-comment-highlight: rgba(88, 166, 255, 0.08);
+  --plan-comment-hover: rgba(88, 166, 255, 0.04);
   --plan-comment-border: #58a6ff;
 
   --plan-code-bg: #161b22;
