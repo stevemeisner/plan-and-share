@@ -56,29 +56,33 @@ export function Sidebar({ onClose }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto p-2">
-        {pendingReviews && pendingReviews.length > 0 && (
-          <>
-            <div className="px-3 py-2 text-[var(--plan-text-muted)] text-xs uppercase tracking-wider flex items-center gap-2">
-              Reviews
-              <span className="bg-[var(--plan-accent)] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
-                {pendingReviews.length}
-              </span>
-            </div>
-            {pendingReviews.map((plan) => {
-              const folder = folders?.find((f) => f._id === plan.folderId);
-              return (
-                <Link
-                  key={plan._id}
-                  to={`/f/${folder?.slug ?? "unknown"}/${plan.slug}`}
-                  className="block px-3 py-2 rounded-md text-sm text-[var(--plan-accent)] hover:bg-[var(--plan-bg-hover)] transition-colors"
-                >
-                  {plan.title}
-                </Link>
-              );
-            })}
-            <div className="border-b border-[var(--sidebar-border)] my-2" />
-          </>
+        <div className="px-3 py-2 text-[var(--plan-text-muted)] text-xs uppercase tracking-wider flex items-center gap-2">
+          Reviews
+          {pendingReviews && pendingReviews.length > 0 && (
+            <span className="bg-[var(--plan-accent)] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+              {pendingReviews.length}
+            </span>
+          )}
+        </div>
+        {pendingReviews && pendingReviews.length > 0 ? (
+          pendingReviews.map((plan) => {
+            const folder = folders?.find((f) => f._id === plan.folderId);
+            return (
+              <Link
+                key={plan._id}
+                to={`/f/${folder?.slug ?? "unknown"}/${plan.slug}`}
+                className="block px-3 py-2 rounded-md text-sm text-[var(--plan-accent)] hover:bg-[var(--plan-bg-hover)] transition-colors"
+              >
+                {plan.title}
+              </Link>
+            );
+          })
+        ) : (
+          <div className="px-3 py-1 text-xs text-[var(--plan-text-muted)] italic">
+            No pending reviews
+          </div>
         )}
+        <div className="border-b border-[var(--sidebar-border)] my-2" />
         <div className="px-3 py-2 text-[var(--plan-text-muted)] text-xs uppercase tracking-wider">
           Folders
         </div>
