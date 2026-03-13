@@ -59,6 +59,7 @@ export function CommentPanel({
       {/* Composer always visible */}
       <div className="p-4 border-t border-[var(--plan-border-subtle)]">
         <CommentComposer
+          autoFocus={false}
           onSubmit={async (body) => {
             await createComment({
               planId: planId as any,

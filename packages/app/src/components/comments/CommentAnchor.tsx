@@ -27,12 +27,14 @@ export function CommentAnchor({
   const paraComments = comments.filter((c) => c.paragraphId === paragraphId);
   const hasComments = paraComments.length > 0;
 
-  const bgClass =
+  const bgClass = [
+    "-mx-4 px-4 py-1 my-0.5 rounded-lg transition-colors duration-150",
     isActive || hasComments
-      ? "bg-[var(--plan-comment-highlight)] -mx-4 px-4 py-1 rounded-lg"
+      ? "bg-[var(--plan-comment-highlight)]"
       : isHovered
-        ? "bg-[var(--plan-comment-hover)] -mx-4 px-4 py-1 rounded-lg transition-colors duration-150"
-        : "transition-colors duration-150";
+        ? "bg-[var(--plan-comment-hover)]"
+        : "",
+  ].join(" ");
 
   return (
     <div
