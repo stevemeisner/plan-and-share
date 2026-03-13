@@ -35,22 +35,22 @@ export function CommentAnchor({
 
   return (
     <div
-      className="relative group"
+      className="relative pr-12"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {(isHovered || hasComments) && (
-        <button
-          onClick={() => setShowComposer(true)}
-          className={`absolute -right-10 top-0 w-7 h-7 rounded-full flex items-center justify-center text-sm transition-opacity ${
-            hasComments
-              ? "bg-[var(--plan-accent)] text-white opacity-80"
-              : "bg-[var(--plan-bg-tertiary)] text-[var(--plan-text-muted)] opacity-0 group-hover:opacity-80"
-          }`}
-        >
-          {hasComments ? paraComments.length : "+"}
-        </button>
-      )}
+      <button
+        onClick={() => setShowComposer(true)}
+        className={`absolute right-0 top-0 w-7 h-7 rounded-full flex items-center justify-center text-sm transition-opacity ${
+          hasComments
+            ? "bg-[var(--plan-accent)] text-white opacity-80"
+            : isHovered
+              ? "bg-[var(--plan-bg-tertiary)] text-[var(--plan-text-muted)] opacity-80"
+              : "opacity-0 pointer-events-none"
+        }`}
+      >
+        {hasComments ? paraComments.length : "+"}
+      </button>
 
       <div
         className={
