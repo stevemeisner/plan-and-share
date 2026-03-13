@@ -127,19 +127,19 @@ export function PlanView() {
         )}
       </div>
 
-      {/* Right sidebar: comment panel or versions/timeline */}
-      {activeParagraphId && currentVersion ? (
-        <div className="hidden lg:block sticky top-0 h-screen">
-          <CommentPanel
-            planId={plan._id}
-            versionId={currentVersion._id}
-            paragraphId={activeParagraphId}
-            comments={comments as any}
-            onClose={() => setActiveParagraphId(null)}
-          />
-        </div>
-      ) : (
-        <div className="w-56 border-l border-[var(--plan-border-subtle)] bg-[var(--plan-bg-secondary)] p-4 hidden lg:block">
+      {/* Right sidebar: single container with cross-fade between versions and comments */}
+      <div className={`
+        hidden lg:block sticky top-0 h-screen relative overflow-hidden
+        border-l border-[var(--plan-border-subtle)] bg-[var(--plan-bg-secondary)]
+        transition-[width] duration-200 ease-in-out
+        ${activeParagraphId ? 'w-80' : 'w-56'}
+      `}>
+        {/* Versions panel — fades out when comments active */}
+        <div className={`
+          absolute inset-0 p-4 overflow-y-auto
+          transition-opacity duration-150
+          ${activeParagraphId ? 'opacity-0 pointer-events-none' : 'opacity-100'}
+        `}>
           <div className="text-xs text-[var(--plan-text-muted)] uppercase tracking-wider mb-2">
             Versions
           </div>
@@ -193,7 +193,24 @@ export function PlanView() {
             </button>
           </div>
         </div>
-      )}
+
+        {/* Comment panel — fades in when comments active */}
+        <div className={`
+          absolute inset-0
+          transition-opacity duration-150
+          ${activeParagraphId ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+        `}>
+          {activeParagraphId && currentVersion && (
+            <CommentPanel
+              planId={plan._id}
+              versionId={currentVersion._id}
+              paragraphId={activeParagraphId}
+              comments={comments as any}
+              onClose={() => setActiveParagraphId(null)}
+            />
+          )}
+        </div>
+      </div>
       {/* Toast notification */}
       {toast.message && (
         <div className="fixed bottom-6 right-6 z-50 bg-[var(--plan-text-heading)] text-[var(--plan-bg)] px-4 py-2 rounded-lg text-sm shadow-lg animate-fade-in">

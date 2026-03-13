@@ -29,7 +29,7 @@ export function CommentPanel({
   const paraComments = comments.filter((c) => c.paragraphId === paragraphId);
 
   return (
-    <div className="w-80 border-l border-[var(--plan-border-subtle)] bg-[var(--plan-bg-secondary)] flex flex-col h-full">
+    <div className="w-full flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-[var(--plan-border-subtle)]">
         <div className="text-xs text-[var(--plan-text-muted)] uppercase tracking-wider">
