@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
-import { CommentThread } from "../comments/CommentThread";
+import { CommentAnchor } from "../comments/CommentAnchor";
+import { parseHtmlSegments } from "../../utils/parseHtmlSegments";
 import mermaid from "mermaid";
 
 mermaid.initialize({
@@ -25,6 +26,8 @@ export function PlanContent({ htmlContent, planId, versionId }: PlanContentProps
     api.comments.listByVersion,
     versionId ? { versionId: versionId as any } : "skip"
   ) ?? [];
+
+  const parsed = useMemo(() => parseHtmlSegments(htmlContent), [htmlContent]);
 
   useEffect(() => {
     if (!contentRef.current) return;
@@ -61,24 +64,36 @@ export function PlanContent({ htmlContent, planId, versionId }: PlanContentProps
 
   return (
     <div className="relative">
-      <article
-        ref={contentRef}
-        className="plan-content prose prose-sm max-w-none"
-        dangerouslySetInnerHTML={{ __html: htmlContent }}
-      />
-      {comments.length > 0 && (
-        <div className="mt-8 border-t border-[var(--plan-border-subtle)] pt-4">
-          <div className="text-xs text-[var(--plan-text-muted)] uppercase tracking-wider mb-3">
-            Comments ({comments.length})
-          </div>
-          {comments.map((comment: any) => (
-            <div key={comment._id} className="mb-3">
-              <div className="text-xs text-[var(--plan-accent)]">{comment.paragraphId}</div>
-              <CommentThread comment={comment} />
-            </div>
-          ))}
-        </div>
-      )}
+      <article ref={contentRef} className="plan-content prose prose-sm max-w-none">
+        {parsed.preamble && (
+          <div dangerouslySetInnerHTML={{ __html: parsed.preamble }} />
+        )}
+        {parsed.sections.map((section) => (
+          <section key={section.id} id={section.id} className={section.className}>
+            {section.headingHtml && (
+              <div dangerouslySetInnerHTML={{ __html: section.headingHtml }} />
+            )}
+            {section.segments.map((seg) =>
+              seg.type === "commentable" && planId && versionId ? (
+                <CommentAnchor
+                  key={seg.paragraphId}
+                  paragraphId={seg.paragraphId}
+                  planId={planId}
+                  versionId={versionId}
+                  comments={comments as any}
+                >
+                  <div dangerouslySetInnerHTML={{ __html: seg.html }} />
+                </CommentAnchor>
+              ) : (
+                <div
+                  key={seg.type === "commentable" ? seg.paragraphId : seg.key}
+                  dangerouslySetInnerHTML={{ __html: seg.html }}
+                />
+              )
+            )}
+          </section>
+        ))}
+      </article>
     </div>
   );
 }

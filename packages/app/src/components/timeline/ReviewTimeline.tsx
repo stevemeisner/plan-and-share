@@ -6,9 +6,19 @@ interface ReviewTimelineProps {
   planId: string;
   planCreatedAt: number;
   planCreatedByName: string;
+  reviewRequestedAt?: number;
+  reviewRequestedBy?: string;
+  requestedReviewers?: string[];
 }
 
-export function ReviewTimeline({ planId, planCreatedAt, planCreatedByName }: ReviewTimelineProps) {
+export function ReviewTimeline({
+  planId,
+  planCreatedAt,
+  planCreatedByName,
+  reviewRequestedAt,
+  reviewRequestedBy,
+  requestedReviewers,
+}: ReviewTimelineProps) {
   const reviews = useQuery(api.reviews.listByPlan, { planId: planId as any }) ?? [];
   const versions = useQuery(api.planVersions.listByPlan, { planId: planId as any }) ?? [];
   const users = useQuery(api.users.list, {}) as Array<{ _id: string; name: string }> | undefined;
@@ -17,7 +27,7 @@ export function ReviewTimeline({ planId, planCreatedAt, planCreatedByName }: Rev
     userId ? (users?.find((u) => u._id === userId)?.name ?? "Unknown") : "CLI";
 
   type TimelineEvent = {
-    type: "approved" | "changes_requested" | "version_pushed" | "created";
+    type: "approved" | "changes_requested" | "version_pushed" | "created" | "review_requested";
     authorName: string;
     timestamp: number;
     note?: string;
@@ -42,6 +52,18 @@ export function ReviewTimeline({ planId, planCreatedAt, planCreatedByName }: Rev
       timestamp: (version as any).pushedAt,
       versionNumber: (version as any).version,
       note: (version as any).changeNote ?? undefined,
+    });
+  }
+
+  if (reviewRequestedAt && reviewRequestedBy) {
+    const reviewerNames = requestedReviewers
+      ?.map((id) => userName(id))
+      .join(", ");
+    events.push({
+      type: "review_requested",
+      authorName: userName(reviewRequestedBy),
+      timestamp: reviewRequestedAt,
+      note: reviewerNames ? `from ${reviewerNames}` : undefined,
     });
   }
 

@@ -3,6 +3,8 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import { CommentComposer } from "./CommentComposer";
 
+type User = { _id: string; name: string };
+
 interface CommentThreadProps {
   comment: {
     _id: string;
@@ -16,8 +18,12 @@ interface CommentThreadProps {
 export function CommentThread({ comment }: CommentThreadProps) {
   const [showReply, setShowReply] = useState(false);
   const replies = useQuery(api.comments.listReplies, { commentId: comment._id as any });
+  const users = useQuery(api.users.list, {}) as User[] | undefined;
   const replyMutation = useMutation(api.comments.reply);
   const resolveMutation = useMutation(api.comments.resolve);
+
+  const authorName = (userId: string) =>
+    users?.find((u) => u._id === userId)?.name ?? "Unknown";
 
   return (
     <div
@@ -27,6 +33,9 @@ export function CommentThread({ comment }: CommentThreadProps) {
           : "border-[var(--plan-comment-border)]"
       }`}
     >
+      <div className="text-xs font-medium text-[var(--plan-text-heading)] mb-0.5">
+        {authorName(comment.authorId)}
+      </div>
       <div className="text-sm text-[var(--plan-text-primary)]">{comment.body}</div>
       <div className="flex items-center gap-3 mt-1 text-xs text-[var(--plan-text-muted)]">
         <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
@@ -51,6 +60,9 @@ export function CommentThread({ comment }: CommentThreadProps) {
 
       {replies?.map((reply: any) => (
         <div key={reply._id} className="ml-4 mt-2 pt-2 border-t border-[var(--plan-border-subtle)]">
+          <div className="text-xs font-medium text-[var(--plan-text-heading)] mb-0.5">
+            {authorName(reply.authorId)}
+          </div>
           <div className="text-sm text-[var(--plan-text-primary)]">{reply.body}</div>
           <div className="text-xs text-[var(--plan-text-muted)] mt-1">
             {new Date(reply.createdAt).toLocaleDateString()}

@@ -127,6 +127,44 @@ export const createWithVersion = mutation({
   },
 });
 
+export const requestReview = mutation({
+  args: {
+    planId: v.id("plans"),
+    reviewerIds: v.array(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    await ctx.db.patch(args.planId, {
+      status: "in_review",
+      requestedReviewers: args.reviewerIds,
+      reviewRequestedAt: Date.now(),
+      reviewRequestedBy: userId,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+export const myPendingReviews = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const inReviewPlans = await ctx.db
+      .query("plans")
+      .withIndex("by_status", (q) => q.eq("status", "in_review"))
+      .collect();
+
+    return inReviewPlans.filter(
+      (p) =>
+        !p.deletedAt &&
+        p.requestedReviewers?.includes(userId)
+    );
+  },
+});
+
 export const updateStatus = mutation({
   args: {
     planId: v.id("plans"),

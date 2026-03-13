@@ -7,6 +7,7 @@ import { VersionSwitcher } from "../components/plans/VersionSwitcher";
 import { PlanContent } from "../components/plans/PlanContent";
 import { ReviewTimeline } from "../components/timeline/ReviewTimeline";
 import { ReviewModal } from "../components/plans/ReviewModal";
+import { ReviewRequestModal } from "../components/plans/ReviewRequestModal";
 
 function useToast() {
   const [message, setMessage] = useState<string | null>(null);
@@ -26,8 +27,10 @@ export function PlanView() {
   ) as Array<{ _id: string; version: number; pushedAt: number; changeNote?: string; htmlContent: string; markdownContent: string; planId: string; pushedBy: string }> | undefined;
   const users = useQuery(api.users.list, {}) as Array<{ _id: string; name: string }> | undefined;
 
+  const me = useQuery(api.users.me, {}) as { _id: string } | null | undefined;
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const [reviewAction, setReviewAction] = useState<"approved" | "changes_requested" | null>(null);
+  const [showReviewRequest, setShowReviewRequest] = useState(false);
   const [busy, setBusy] = useState(false);
   const toast = useToast();
 
@@ -70,15 +73,10 @@ export function PlanView() {
             <StatusBadge status={plan.status} />
             {plan.status === "draft" && (
               <button
-                onClick={async () => {
-                  setBusy(true);
-                  await updateStatus({ planId: plan._id, status: "in_review" });
-                  setBusy(false);
-                }}
-                disabled={busy}
-                className="px-3 py-1 bg-[var(--plan-accent)] text-white text-xs rounded-md hover:opacity-90 transition-opacity disabled:opacity-50"
+                onClick={() => setShowReviewRequest(true)}
+                className="px-3 py-1 bg-[var(--plan-accent)] text-white text-xs rounded-md hover:opacity-90 transition-opacity"
               >
-                {busy ? "Submitting..." : "Request Review"}
+                Request Review
               </button>
             )}
             {plan.status === "in_review" && (
@@ -139,6 +137,9 @@ export function PlanView() {
             planId={plan._id}
             planCreatedAt={(plan as any).createdAt}
             planCreatedByName={creatorName}
+            reviewRequestedAt={(plan as any).reviewRequestedAt}
+            reviewRequestedBy={(plan as any).reviewRequestedBy}
+            requestedReviewers={(plan as any).requestedReviewers}
           />
         </div>
         <div className="mt-4 pt-4 border-t border-[var(--plan-border-subtle)]">
@@ -172,6 +173,14 @@ export function PlanView() {
         <div className="fixed bottom-6 right-6 z-50 bg-[var(--plan-text-heading)] text-[var(--plan-bg)] px-4 py-2 rounded-lg text-sm shadow-lg animate-fade-in">
           {toast.message}
         </div>
+      )}
+      {showReviewRequest && me && (
+        <ReviewRequestModal
+          planId={plan._id}
+          currentUserId={me._id}
+          onClose={() => setShowReviewRequest(false)}
+          onSubmitted={() => setShowReviewRequest(false)}
+        />
       )}
       {reviewAction && currentVersion && (
         <ReviewModal

@@ -53,21 +53,8 @@ export const paragraphIds: Plugin<[ParagraphIdsOptions], Root> = (options) => {
 };
 
 function wrapInCommentable(node: Element, paragraphId: string): void {
-  const className =
-    node.tagName === "p"
-      ? "plan-paragraph"
-      : node.tagName === "pre"
-        ? "plan-code"
-        : node.tagName === "table"
-          ? "plan-table"
-          : "plan-list";
-
   node.properties = node.properties || {};
   node.properties["data-paragraph-id"] = paragraphId;
-  (node.properties.className as string[]) = [
-    ...((node.properties.className as string[]) || []),
-    className,
-  ];
 }
 
 function visit(

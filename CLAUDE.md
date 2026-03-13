@@ -63,3 +63,4 @@ git push origin main
 - **Never guess at root causes.** If uncertain, investigate first — read source code, trace execution, check logs. Only ship fixes when the cause is verified.
 - **PlanShare is self-hosted, not a SaaS.** Never reference a specific deployment as "the" deployment. Frame docs as "deploy your own."
 - **The frontend is host-agnostic.** Don't hardcode Vercel in docs. It's a static Vite app that runs anywhere.
+- **Verify features end-to-end before marking complete.** Trace the actual user click path. Backend + components existing is not "done" — they must be wired up and usable. Ask: "Can a user actually do this right now?"

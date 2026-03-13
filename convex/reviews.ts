@@ -39,6 +39,7 @@ export const submit = mutation({
     const newStatus = args.action === "approved" ? "approved" : "rejected";
     await ctx.db.patch(args.planId, {
       status: newStatus,
+      requestedReviewers: undefined,
       updatedAt: Date.now(),
     });
 
