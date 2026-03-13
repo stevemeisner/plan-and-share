@@ -1,6 +1,7 @@
 import { useConvexAuth } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { ReactNode, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 export function AuthGuard({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useConvexAuth();
@@ -22,6 +23,7 @@ export function AuthGuard({ children }: { children: ReactNode }) {
 
 function LoginPage() {
   const { signIn } = useAuthActions();
+  const location = useLocation();
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +31,8 @@ function LoginPage() {
     setSigningIn(true);
     setError(null);
     try {
-      await signIn("google", { redirectTo: "/" });
+      const redirectTo = location.pathname + location.search;
+      await signIn("google", { redirectTo });
     } catch (e) {
       setError("Sign-in failed. Please try again.");
       setSigningIn(false);
