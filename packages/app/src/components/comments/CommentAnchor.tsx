@@ -28,7 +28,7 @@ export function CommentAnchor({
   const hasComments = paraComments.length > 0;
 
   const bgClass = [
-    "-mx-4 px-4 py-1 my-0.5 rounded-lg transition-colors duration-150",
+    "-mx-4 px-4 py-2 my-0.5 rounded-lg transition-colors duration-150 [&>div>*:first-child]:!mt-0 [&>div>*:last-child]:!mb-0",
     isActive || hasComments
       ? "bg-[var(--plan-comment-highlight)]"
       : isHovered
