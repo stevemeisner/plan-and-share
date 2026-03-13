@@ -11,6 +11,7 @@ export default defineConfig({
     "@planshare/renderer",
     "unified",
     "remark-parse",
+    "remark-gfm",
     "remark-rehype",
     "rehype-stringify",
     "github-slugger",

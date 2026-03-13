@@ -6,10 +6,7 @@
 }
 
 .plan-content .plan-title {
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: var(--plan-text-heading);
-  margin-bottom: 0.5rem;
+  display: none;
 }
 
 .plan-content .plan-section {
@@ -113,4 +110,14 @@
 
 .plan-section--summary .plan-heading {
   border-bottom: none;
+}
+
+.plan-content .mermaid-diagram {
+  margin-bottom: var(--plan-paragraph-gap);
+  overflow-x: auto;
+}
+
+.plan-content .mermaid-diagram svg {
+  max-width: 100%;
+  height: auto;
 }

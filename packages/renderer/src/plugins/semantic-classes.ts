@@ -49,12 +49,14 @@ export const semanticClasses: Plugin<[], Root> = () => {
           children: [node],
         };
       } else if (currentSection) {
+        addElementClasses(node);
         currentSection.children.push(node);
       } else {
         if (node.type === "element" && node.tagName === "h1") {
           node.properties = node.properties || {};
           node.properties.className = ["plan-title"];
         }
+        addElementClasses(node);
         newChildren.push(node);
       }
     }
@@ -66,6 +68,27 @@ export const semanticClasses: Plugin<[], Root> = () => {
     tree.children = newChildren;
   };
 };
+
+const TAG_CLASS_MAP: Record<string, string> = {
+  table: "plan-table",
+  ul: "plan-list",
+  ol: "plan-list",
+  pre: "plan-code",
+  p: "plan-paragraph",
+  blockquote: "plan-blockquote",
+};
+
+function addElementClasses(node: Element | { type: string }): void {
+  if (node.type !== "element") return;
+  const el = node as Element;
+  const cls = TAG_CLASS_MAP[el.tagName];
+  if (cls) {
+    el.properties = el.properties || {};
+    el.properties.className = el.properties.className
+      ? [...(el.properties.className as string[]), cls]
+      : [cls];
+  }
+}
 
 function getTextContent(node: Element): string {
   let text = "";

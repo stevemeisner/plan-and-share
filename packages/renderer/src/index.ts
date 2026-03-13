@@ -1,5 +1,6 @@
 import { unified } from "unified";
 import remarkParse from "remark-parse";
+import remarkGfm from "remark-gfm";
 import remarkRehype from "remark-rehype";
 import rehypeStringify from "rehype-stringify";
 import { paragraphIds } from "./plugins/paragraph-ids.js";
@@ -18,6 +19,7 @@ export async function renderMarkdown(markdown: string): Promise<{
 
   const result = await unified()
     .use(remarkParse)
+    .use(remarkGfm)
     .use(remarkRehype)
     .use(semanticClasses)
     .use(paragraphIds, { onId: (id: string) => collectedIds.push(id) })
