@@ -7,7 +7,7 @@ type AuthState = "confirm" | "authorizing" | "success" | "error";
 
 export function CliAuthPage() {
   const [searchParams] = useSearchParams();
-  const code = searchParams.get("code");
+  const code = searchParams.get("session");
   const approveSession = useMutation(api.cliAuth.approveSession);
   const [state, setState] = useState<AuthState>("confirm");
   const [error, setError] = useState<string | null>(null);

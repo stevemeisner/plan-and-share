@@ -91,7 +91,7 @@ export async function loginCommand(url?: string) {
   }
 
   // Open browser
-  const authUrl = `${webAppUrl}/cli-auth?code=${code}`;
+  const authUrl = `${webAppUrl}/cli-auth?session=${code}`;
   console.log(`\nOpening browser for authentication...`);
   console.log(`If the browser doesn't open, visit: ${authUrl}\n`);
   console.log(`Verify this code in your browser: ${code}\n`);
