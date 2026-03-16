@@ -1,13 +1,23 @@
 {
   "name": "@planshare/cli",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "CLI tool for pushing markdown plans to PlanShare",
   "type": "module",
   "bin": {
     "plan-push": "./dist/index.js"
   },
-  "files": ["dist", "README.md"],
-  "keywords": ["planshare", "markdown", "plans", "cli", "technical-plans", "code-review"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "planshare",
+    "markdown",
+    "plans",
+    "cli",
+    "technical-plans",
+    "code-review"
+  ],
   "homepage": "https://github.com/stevemeisner/plan-and-share#cli-plan-push",
   "bugs": {
     "url": "https://github.com/stevemeisner/plan-and-share/issues"
