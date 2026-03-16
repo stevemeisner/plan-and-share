@@ -2,27 +2,41 @@
 
 CLI for [PlanShare](https://github.com/stevemeisner/plan-and-share) — an open-source tool for publishing, reviewing, and approving technical plans. Write plans in markdown, push them with `plan-push`, and your team reviews them in the web app with inline comments, approvals, and version tracking.
 
-Each org deploys their own PlanShare instance — a Convex backend and a static Vite app you can host anywhere (Vercel, Netlify, Cloudflare Pages, etc.). Access can be restricted to specific email domains via `ALLOWED_EMAIL_DOMAINS`.
+Each org deploys their own PlanShare instance — a Convex backend and a static Vite frontend you can host anywhere (Vercel, Netlify, Cloudflare Pages, etc.). Access can be restricted to specific email domains via `ALLOWED_EMAIL_DOMAINS`.
 
 ## Install
 
 ```bash
-# Global install (recommended — works across all your projects)
+# Global install (recommended)
 npm install -g @planshare/cli
 plan-push --help
 
-# Or as a per-project dev dependency (useful for CI)
+# Or as a per-project dev dependency
 npm install -D @planshare/cli
 npx plan-push --help
+```
+
+## Quick Start
+
+```bash
+# 1. Connect to your team's PlanShare
+plan-push login https://your-planshare-app.example.com
+
+# 2. Push a plan
+plan-push push ./docs/my-plan.md
 ```
 
 ## Authentication
 
 ```bash
-plan-push login https://your-server.convex.site
+plan-push login https://your-planshare-app.example.com
 ```
 
+Point `login` at your deployed PlanShare frontend URL — the CLI auto-discovers the backend API from there. You can also pass a `.convex.site` URL directly if you prefer.
+
 This opens your browser where you sign in with Google and confirm a verification code. Once confirmed, the CLI stores an API token locally at `~/.plan-push/`. No passwords or emails to type.
+
+You can also set `PLANSHARE_URL` as an environment variable instead of logging in interactively (useful for CI).
 
 ## Commands
 
@@ -80,21 +94,18 @@ PlanShare has two parts: a **Convex backend** (database, auth, API) and a **Vite
 For CLI browser auth to work, Convex needs to know where your frontend is hosted. Set this as a **Convex environment variable**:
 
 ```bash
-# Tell Convex where the web app lives (your frontend URL)
-npx convex env set WEB_APP_URL "https://your-app.example.com"
-npx convex env set WEB_APP_URL "https://your-app.example.com" --prod
+npx convex env set WEB_APP_URL "https://your-planshare-app.example.com"
 ```
-
-The CLI talks to your `.convex.site` URL (the backend). The `WEB_APP_URL` variable tells the backend where to redirect users for browser-based login.
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
 | Browser doesn't open during login | Copy the URL from the terminal and open manually |
-| "Session expired" during login | Run `plan-push login` again — sessions last 10 minutes |
-| Token stopped working | Token may have been revoked. Run `plan-push login` to get a new one |
+| "Session expired" during login | Run `plan-push login` again — sessions last 5 minutes |
+| Token stopped working | Token may have been revoked. Run `plan-push login` again |
 | `Could not reach <url>/api/folders` | Check the URL and make sure Convex is deployed |
+| `Could not discover API URL` | Make sure the frontend is deployed with `VITE_CONVEX_URL` set, or pass the `.convex.site` URL directly |
 
 ## License
 
