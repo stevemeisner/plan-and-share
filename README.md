@@ -1,6 +1,6 @@
 # PlanShare
 
-Open-source tool for publishing, reviewing, and approving technical plans. Write plans in markdown, push them with the CLI, and your team reviews in the web app — inline comments, approve/request changes, version tracking.
+Open-source tool for publishing, reviewing, and approving technical plans. Write plans in markdown, push them with the [CLI](https://www.npmjs.com/package/@planshare/cli), and your team reviews in the web app — inline comments, approve/request changes, version tracking.
 
 Each org deploys their own instance: a Convex backend and a static Vite app you can host anywhere. Restrict access to your email domain with `ALLOWED_EMAIL_DOMAINS`.
 
