@@ -53,8 +53,8 @@ Frontend build-time: `VITE_CONVEX_URL` — the `.convex.cloud` URL.
 
 ```bash
 # Convex (uses deploy keys from .env.local / .env.production.local)
-npx convex dev --once                                    # dev
-source .env.production.local && npx convex deploy -y     # prod
+npx convex dev --once                                              # dev
+npx convex deploy -y --env-file .env.production.local              # prod
 
 # Frontend: push to main triggers redeploy (if CI configured)
 git push origin main
