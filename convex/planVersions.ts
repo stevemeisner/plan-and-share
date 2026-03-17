@@ -53,10 +53,11 @@ export const listByPlan = query({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
-    return ctx.db
+    const versions = await ctx.db
       .query("planVersions")
       .withIndex("by_plan", (q) => q.eq("planId", args.planId))
       .collect();
+    return versions.filter((v) => !v.deletedAt);
   },
 });
 
@@ -117,5 +118,39 @@ export const push = mutation({
     await ctx.db.patch(args.planId, updates);
 
     return versionId;
+  },
+});
+
+export const deleteVersion = mutation({
+  args: { versionId: v.id("planVersions") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const version = await ctx.db.get(args.versionId);
+    if (!version) throw new Error("Version not found");
+
+    const plan = await ctx.db.get(version.planId);
+    if (!plan) throw new Error("Plan not found");
+    if (plan.createdBy !== userId) throw new Error("Only the plan creator can delete");
+
+    // Soft-delete the version
+    await ctx.db.patch(args.versionId, { deletedAt: Date.now() });
+
+    // Find remaining (non-deleted) versions
+    const allVersions = await ctx.db
+      .query("planVersions")
+      .withIndex("by_plan", (q) => q.eq("planId", version.planId))
+      .collect();
+    const remaining = allVersions.filter((v) => !v.deletedAt);
+
+    if (remaining.length === 0) {
+      // Last version deleted — soft-delete the plan
+      await ctx.db.patch(version.planId, { deletedAt: Date.now() });
+    } else if (plan.currentVersionId === args.versionId) {
+      // Deleted the current version — fall back to most recent remaining
+      const sorted = remaining.sort((a, b) => b.version - a.version);
+      await ctx.db.patch(version.planId, { currentVersionId: sorted[0]._id });
+    }
   },
 });
