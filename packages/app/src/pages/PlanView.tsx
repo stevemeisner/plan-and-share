@@ -9,6 +9,7 @@ import { ReviewTimeline } from "../components/timeline/ReviewTimeline";
 import { ReviewModal } from "../components/plans/ReviewModal";
 import { ReviewRequestModal } from "../components/plans/ReviewRequestModal";
 import { CommentPanel } from "../components/comments/CommentPanel";
+import { ConfirmDialog } from "../components/plans/ConfirmDialog";
 
 function useToast() {
   const [message, setMessage] = useState<string | null>(null);
@@ -34,6 +35,7 @@ export function PlanView() {
   const [showReviewRequest, setShowReviewRequest] = useState(false);
   const [busy, setBusy] = useState(false);
   const [activeParagraphId, setActiveParagraphId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ type: "plan" | "version"; versionId?: string } | null>(null);
   const toast = useToast();
 
   const currentVersion = versions?.find(
@@ -47,6 +49,8 @@ export function PlanView() {
 
   const updateStatus = useMutation(api.plans.updateStatus);
   const submitReview = useMutation(api.reviews.submit);
+  const deletePlanMut = useMutation(api.plans.deletePlan);
+  const deleteVersionMut = useMutation(api.planVersions.deleteVersion);
 
   const createdBy = (plan as any)?.createdBy;
   const creatorName = createdBy
@@ -144,18 +148,30 @@ export function PlanView() {
             Versions
           </div>
           {versions?.sort((a, b) => b.version - a.version).map((v) => (
-            <button
-              key={v._id}
-              onClick={() => setSelectedVersionId(v._id)}
-              className={`block w-full text-left text-sm px-2 py-1 rounded ${
-                v._id === (selectedVersionId ?? plan.currentVersionId)
-                  ? "text-[var(--plan-accent)]"
-                  : "text-[var(--plan-text-muted)] hover:text-[var(--plan-text-primary)]"
-              }`}
-            >
-              v{v.version}
-              {v._id === plan.currentVersionId ? " — current" : ""}
-            </button>
+            <div key={v._id} className="group flex items-center">
+              <button
+                onClick={() => setSelectedVersionId(v._id)}
+                className={`flex-1 text-left text-sm px-2 py-1 rounded ${
+                  v._id === (selectedVersionId ?? plan.currentVersionId)
+                    ? "text-[var(--plan-accent)]"
+                    : "text-[var(--plan-text-muted)] hover:text-[var(--plan-text-primary)]"
+                }`}
+              >
+                v{v.version}
+                {v._id === plan.currentVersionId ? " — current" : ""}
+              </button>
+              {(plan as any).createdBy === me?._id && (
+                <button
+                  onClick={() => setConfirmDelete({ type: "version", versionId: v._id })}
+                  className="p-1 rounded opacity-0 group-hover:opacity-100 text-[var(--plan-text-muted)] hover:text-[var(--plan-danger)] transition-opacity"
+                  aria-label={`Delete version ${v.version}`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                    <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A1.75 1.75 0 0 0 9.25 1.5h-2.5A1.75 1.75 0 0 0 5 3.25Zm2.5-.75a.25.25 0 0 0-.25.25V4h1.5v-.75a.25.25 0 0 0-.25-.25h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5A.75.75 0 0 1 9.95 6Z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              )}
+            </div>
           ))}
           <div className="mt-6">
             <ReviewTimeline
@@ -191,6 +207,14 @@ export function PlanView() {
             >
               Copy Link
             </button>
+            {(plan as any).createdBy === me?._id && (
+              <button
+                onClick={() => setConfirmDelete({ type: "plan" })}
+                className="w-full text-left px-2 py-2 mt-2 text-sm text-[var(--plan-danger)] bg-[var(--plan-bg)] border border-[var(--plan-border)] rounded-md hover:bg-[var(--plan-danger-bg)] transition-colors cursor-pointer"
+              >
+                Delete Plan
+              </button>
+            )}
           </div>
         </div>
 
@@ -223,6 +247,32 @@ export function PlanView() {
           currentUserId={me._id}
           onClose={() => setShowReviewRequest(false)}
           onSubmitted={() => setShowReviewRequest(false)}
+        />
+      )}
+      {confirmDelete && (
+        <ConfirmDialog
+          title={confirmDelete.type === "plan" ? "Delete Plan" : "Delete Version"}
+          message={
+            confirmDelete.type === "plan"
+              ? `Delete "${plan.title}"? This will hide it from the folder. This can't be undone.`
+              : `Delete this version? ${versions && versions.length <= 1 ? "This is the only version — the entire plan will be deleted." : "This can't be undone."}`
+          }
+          confirmLabel="Delete"
+          onConfirm={async () => {
+            if (confirmDelete.type === "plan") {
+              await deletePlanMut({ planId: plan._id as any });
+              setConfirmDelete(null);
+              window.history.back();
+            } else if (confirmDelete.versionId) {
+              const isLastVersion = versions && versions.length <= 1;
+              await deleteVersionMut({ versionId: confirmDelete.versionId as any });
+              setConfirmDelete(null);
+              if (isLastVersion) {
+                window.history.back();
+              }
+            }
+          }}
+          onCancel={() => setConfirmDelete(null)}
         />
       )}
       {reviewAction && currentVersion && (
