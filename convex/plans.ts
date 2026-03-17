@@ -165,6 +165,20 @@ export const myPendingReviews = query({
   },
 });
 
+export const deletePlan = mutation({
+  args: { planId: v.id("plans") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const plan = await ctx.db.get(args.planId);
+    if (!plan) throw new Error("Plan not found");
+    if (plan.createdBy !== userId) throw new Error("Only the plan creator can delete");
+
+    await ctx.db.patch(args.planId, { deletedAt: Date.now() });
+  },
+});
+
 export const updateStatus = mutation({
   args: {
     planId: v.id("plans"),

@@ -86,6 +86,46 @@ describe("plans", () => {
     expect(plans[0].title).toBe("Plan A");
   });
 
+  it("deletes a plan (soft-delete by creator)", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, identity: asUser } = await createAuthUser(t);
+    const { folderId } = await createFolder(t, { createdBy: userId });
+
+    const { planId } = await asUser.mutation(api.plans.createWithVersion, {
+      folderId,
+      title: "To Delete",
+      markdownContent: "# Delete me",
+      htmlContent: "<article>Delete me</article>",
+    });
+
+    await asUser.mutation(api.plans.deletePlan, { planId });
+
+    const plan = await t.run(async (ctx) => ctx.db.get(planId));
+    expect(plan?.deletedAt).toBeDefined();
+
+    // Should not appear in folder listing
+    const plans = await asUser.query(api.plans.listByFolder, { folderId });
+    expect(plans).toHaveLength(0);
+  });
+
+  it("rejects delete by non-creator", async () => {
+    const t = convexTest(schema, modules);
+    const { userId, identity: asUser } = await createAuthUser(t);
+    const { identity: asOther } = await createAuthUser(t, { email: "other@example.com" });
+    const { folderId } = await createFolder(t, { createdBy: userId });
+
+    const { planId } = await asUser.mutation(api.plans.createWithVersion, {
+      folderId,
+      title: "Not Yours",
+      markdownContent: "# Nope",
+      htmlContent: "<article>Nope</article>",
+    });
+
+    await expect(
+      asOther.mutation(api.plans.deletePlan, { planId })
+    ).rejects.toThrow("Only the plan creator can delete");
+  });
+
   it("auto-moves rejected plan back to in_review on new version push", async () => {
     const t = convexTest(schema, modules);
     const { userId, identity: asUser } = await createAuthUser(t);
