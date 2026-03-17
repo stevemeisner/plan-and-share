@@ -60,6 +60,7 @@ export default defineSchema({
     pushedBy: v.optional(v.id("users")),
     pushedAt: v.number(),
     changeNote: v.optional(v.string()),
+    deletedAt: v.optional(v.number()),
   }).index("by_plan", ["planId"]),
 
   comments: defineTable({
