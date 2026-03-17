@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CommentAnchor } from "../comments/CommentAnchor";
 import { parseHtmlSegments } from "../../utils/parseHtmlSegments";
 import mermaid from "mermaid";
@@ -11,6 +11,21 @@ mermaid.initialize({
     background: "transparent",
   },
 });
+
+function MermaidDiagram({ code }: { code: string }) {
+  const [svg, setSvg] = useState<string | null>(null);
+
+  useEffect(() => {
+    const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
+    mermaid.render(id, code).then(({ svg }) => setSvg(svg)).catch(() => {});
+  }, [code]);
+
+  if (!svg) {
+    return <pre><code className="language-mermaid">{code}</code></pre>;
+  }
+
+  return <div className="mermaid-diagram" dangerouslySetInnerHTML={{ __html: svg }} />;
+}
 
 interface PlanContentProps {
   htmlContent: string;
@@ -40,38 +55,15 @@ export function PlanContent({
 
   const parsed = useMemo(() => parseHtmlSegments(htmlContent), [htmlContent]);
 
-  useEffect(() => {
-    if (!contentRef.current) return;
-
-    const codeBlocks = contentRef.current.querySelectorAll("code.language-mermaid");
-    if (codeBlocks.length === 0) return;
-
-    let cancelled = false;
-
-    (async () => {
-      for (const code of codeBlocks) {
-        if (cancelled) return;
-        const pre = code.parentElement;
-        if (!pre || pre.tagName !== "PRE") continue;
-
-        const diagram = code.textContent || "";
-        const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
-
-        try {
-          const { svg } = await mermaid.render(id, diagram);
-          if (cancelled) return;
-          const wrapper = document.createElement("div");
-          wrapper.className = "mermaid-diagram";
-          wrapper.innerHTML = svg;
-          pre.replaceWith(wrapper);
-        } catch {
-          // Leave the code block as-is if mermaid can't parse it
-        }
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [htmlContent]);
+  // Extract mermaid code from an HTML segment if it contains a mermaid code block
+  const extractMermaid = (html: string): string | null => {
+    const match = html.match(/<code class="language-mermaid">([\s\S]*?)<\/code>/);
+    if (!match) return null;
+    // Decode HTML entities
+    const div = document.createElement("div");
+    div.innerHTML = match[1];
+    return div.textContent;
+  };
 
   return (
     <div className="relative">
@@ -84,8 +76,13 @@ export function PlanContent({
             {section.headingHtml && (
               <div dangerouslySetInnerHTML={{ __html: section.headingHtml }} />
             )}
-            {section.segments.map((seg) =>
-              seg.type === "commentable" && planId && versionId && onSelectParagraph ? (
+            {section.segments.map((seg) => {
+              const mermaidCode = extractMermaid(seg.html);
+              const content = mermaidCode
+                ? <MermaidDiagram code={mermaidCode} />
+                : <div dangerouslySetInnerHTML={{ __html: seg.html }} />;
+
+              return seg.type === "commentable" && planId && versionId && onSelectParagraph ? (
                 <CommentAnchor
                   key={seg.paragraphId}
                   paragraphId={seg.paragraphId}
@@ -93,15 +90,14 @@ export function PlanContent({
                   onSelectParagraph={onSelectParagraph}
                   isActive={activeParagraphId === seg.paragraphId}
                 >
-                  <div dangerouslySetInnerHTML={{ __html: seg.html }} />
+                  {content}
                 </CommentAnchor>
               ) : (
-                <div
-                  key={seg.type === "commentable" ? seg.paragraphId : seg.key}
-                  dangerouslySetInnerHTML={{ __html: seg.html }}
-                />
-              )
-            )}
+                <div key={seg.type === "commentable" ? seg.paragraphId : seg.key}>
+                  {content}
+                </div>
+              );
+            })}
           </section>
         ))}
       </article>
