@@ -25,8 +25,10 @@ pnpm test             # run all tests (Vitest, 31 specs)
 ```bash
 cd packages/cli
 pnpm build            # bundle with tsup → dist/index.js
-npm publish --access public   # publish to npm (granular token configured, no --otp needed)
+npm version patch --no-git-tag-version && npm publish --access public  # bump + publish
 ```
+
+CLI commands: `login`, `push`, `folders`, `plans`, `create-folder`. See `packages/cli/README.md` for full docs.
 
 ## Key Technical Details
 
@@ -50,13 +52,15 @@ Frontend build-time: `VITE_CONVEX_URL` — the `.convex.cloud` URL.
 ## Deploying
 
 ```bash
-# Convex
-npx convex deploy -y --typecheck=disable   # prod
-npx convex dev --once                       # dev
+# Convex (uses deploy keys from .env.local / .env.production.local)
+npx convex dev --once                                    # dev
+source .env.production.local && npx convex deploy -y     # prod
 
 # Frontend: push to main triggers redeploy (if CI configured)
 git push origin main
 ```
+
+Deploy keys are stored in `.env.local` (dev) and `.env.production.local` (prod) as `CONVEX_DEPLOY_KEY`. Both files are gitignored. Generate keys from the Convex dashboard → Settings → Deploy Keys.
 
 ## Rules
 
