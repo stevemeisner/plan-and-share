@@ -4,6 +4,7 @@ import { loginCommand } from "./commands/login.js";
 import { foldersCommand } from "./commands/folders.js";
 import { plansCommand } from "./commands/plans.js";
 import { pushCommand } from "./commands/push.js";
+import { createFolderCommand } from "./commands/create-folder.js";
 
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json");
@@ -29,6 +30,11 @@ program
   .command("plans <folder>")
   .description("List plans in a folder")
   .action(plansCommand);
+
+program
+  .command("create-folder <name>")
+  .description("Create a new folder")
+  .action(createFolderCommand);
 
 program
   .command("push <file>")

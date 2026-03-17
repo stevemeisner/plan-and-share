@@ -56,17 +56,31 @@ export async function pushCommand(
     ]);
 
     if (action === "New plan") {
-      const { selectedFolder } = await inquirer.default.prompt([
+      const folderChoices = [
+        ...folders.map((f: any) => ({ name: f.name, value: f._id })),
+        { name: "+ Create new folder", value: "__new__" },
+      ];
+      let { selectedFolder } = await inquirer.default.prompt([
         {
           type: "list",
           name: "selectedFolder",
           message: "Which folder?",
-          choices: folders.map((f: any) => ({
-            name: f.name,
-            value: f._id,
-          })),
+          choices: folderChoices,
         },
       ]);
+
+      if (selectedFolder === "__new__") {
+        const { folderName } = await inquirer.default.prompt([
+          { type: "input", name: "folderName", message: "Folder name:" },
+        ]);
+        const result = await apiRequest("/api/folders", {
+          method: "POST",
+          body: { name: folderName },
+        });
+        selectedFolder = result.id;
+        console.log(`✓ Created folder "${folderName}"`);
+      }
+
       folderId = selectedFolder;
 
       const { inputTitle } = await inquirer.default.prompt([

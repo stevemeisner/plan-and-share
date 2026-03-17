@@ -1,4 +1,4 @@
-import { query, mutation, internalQuery } from "./_generated/server";
+import { query, mutation, internalQuery, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import GithubSlugger from "github-slugger";
@@ -39,5 +39,28 @@ export const create = mutation({
       createdBy: userId,
       createdAt: Date.now(),
     });
+  },
+});
+
+// Internal (unauthenticated) version for HTTP endpoints (CLI access)
+export const createInternal = internalMutation({
+  args: {
+    name: v.string(),
+    description: v.optional(v.string()),
+    userId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    const slugger = new GithubSlugger();
+    const slug = slugger.slug(args.name);
+
+    const id = await ctx.db.insert("folders", {
+      name: args.name,
+      slug,
+      description: args.description,
+      createdBy: args.userId,
+      createdAt: Date.now(),
+    });
+
+    return { id, slug };
   },
 });

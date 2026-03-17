@@ -117,6 +117,35 @@ http.route({
 });
 
 http.route({
+  path: "/api/folders",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    const body = await request.json();
+    const { name, description } = body;
+
+    if (!name) {
+      return new Response(JSON.stringify({ error: "name required" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const userId = await resolveUserId(ctx, request);
+
+    const result = await ctx.runMutation(internal.folders.createInternal, {
+      name,
+      description,
+      userId: userId as any,
+    });
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }),
+});
+
+http.route({
   path: "/api/plans",
   method: "GET",
   handler: httpAction(async (ctx, request) => {
